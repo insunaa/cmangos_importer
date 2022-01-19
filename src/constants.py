@@ -269,7 +269,6 @@ INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '22', '218', '23162
 INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '21', '219', '23162'); -- Large Bag
 INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '20', '220', '23162'); -- Large Bag
 $inventory_list
-$pets
 $skills
 $spells
 INSERT INTO `item_instance` VALUES ('184', '$char_guid', '6948', '0', '0', '1', '0', '0 0 0 0 0 ', '1', '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ', '0', '100', '0');
