@@ -1,0 +1,8 @@
+## Interface: 25100
+## Title: Questionably Epic Importer
+## Author: Voulk
+## Notes: Gear Importer for QE Live Burning Crusade
+## Version: 1.26
+
+embeds.xml
+questionablyepic_enhanced.lua
