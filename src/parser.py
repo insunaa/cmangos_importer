@@ -1,18 +1,4 @@
-global spells, skills, Template, inventory_list, instance_list, itemguiditr, action_list, faction_list, learned_professions, pet_list,skillmap
-
-from src.constants import (
-    spells,
-    skills,
-    Template,
-    inventory_list,
-    instance_list,
-    itemguiditr,
-    action_list,
-    faction_list,
-    learned_professions,
-    pet_list,
-    skillmap
-)
+from src.constants import *
 
 
 def clean(mystr, chars_to_remove=("\n",)):
