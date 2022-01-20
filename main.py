@@ -4,9 +4,9 @@ import sys
 import os.path
 from src.parser import parse_file
 
-if False:
-    filepath = "../generic_export_file"
-else:
+
+if sys.stdin and sys.stdin.isatty():
+    # check if ran from cli
     if len(sys.argv) == 2:
         filepath = sys.argv[1]
     elif len(sys.argv) == 1:
@@ -14,6 +14,8 @@ else:
         sys.exit(0)
     else:
         sys.exit(1)
+else:
+    filepath = "../generic_export_file"
 
 
 if os.path.isfile(filepath):
