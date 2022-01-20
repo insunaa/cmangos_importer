@@ -7,7 +7,7 @@ def clean(mystr, chars_to_remove=("\n",)):
     return "".join([e for e in mystr if e not in chars_to_remove])
 
 
-def parse_file(f):
+def parse_file(f, exp):
     def get_char_info():
         global skills
         char = f[3].split("=")
@@ -21,6 +21,7 @@ def parse_file(f):
             char_gender=clean(f[6].split("=")[1]),
             char_class=classes[char_class],
             char_race=races[char_race],
+            char_level=clean(f[4].split("=")[1]),
         )
 
         if len(armor_skill):
@@ -32,8 +33,8 @@ def parse_file(f):
         for weaponSkill in weapon_skills:
             skills += skillsTemplate.fill(
                 skill_id=weaponSkill,
-                current_skill=350,
-                max_skill=350,
+                current_skill=int(result["char_level"]) * 5,
+                max_skill=int(result["char_level"]) * 5,
             )
 
         return result
@@ -96,6 +97,8 @@ def parse_file(f):
                 parse_slots_base()
 
     def parse_pet():
+        if char_info["char_class"] != classes["hunter"]:
+            return
         global pet_list
         petFamily = 0
         petHealth = 30000
@@ -105,6 +108,7 @@ def parse_file(f):
             if "pet" in f[i]:
                 petInfo = f[i].split(",")
                 petName = clean(petInfo[0].split("=")[1])
+                petLevel = clean(petInfo[1].split("=")[1])
                 petEntry = clean(petInfo[2].split("=")[1])
                 if len(petInfo) == 6:
                     petFamily = clean(petInfo[3].split("=")[1])
@@ -116,6 +120,7 @@ def parse_file(f):
                     pet_entry=petEntry,
                     pet_owner=char_guid,
                     pet_name=petName,
+                    pet_level=petLevel,
                     pet_model=modelId,
                     pet_health=petHealth,
                     pet_resource=petPower,
@@ -175,7 +180,8 @@ def parse_file(f):
 
     def parse_spells(all_items):
         global skills, spells, action_list, faction_list
-        spells += spellTemplate.fill(spell_id=34093)
+        if exp > 0 and str(34093) not in all_items["spells"][3]:
+            spells += spellTemplate.fill(spell_id=34093)
         for spell in all_items["spells"][3]:
             spell = int(spell)
             if spell == 348700:
@@ -195,16 +201,16 @@ def parse_file(f):
                     learned_professions[profession] = True
                     skills += skillsTemplate.fill(
                         skill_id=professionSkillMap[profession],
-                        current_skill=375,
-                        max_skill=375,
+                        current_skill=maxSkillMap["professions"][exp],
+                        max_skill=maxSkillMap["professions"][exp],
                     )
                     if (
-                        str(professionSpellMap[profession])
+                        str(professionSpellMap[exp][profession])
                         not in all_items["spells"][3]
                     ):
                         # override what player has and give him top profession level
                         spells += spellTemplate.fill(
-                            spell_id=professionSpellMap[profession]
+                            spell_id=professionSpellMap[exp][profession]
                         )
 
         for action in all_items["actions"][3]:
