@@ -197,7 +197,7 @@ def parse_file(f):
                         max_skill=375,
                     )
                     if (
-                        str(professionSpellMap[profession]) + "\n"
+                        str(professionSpellMap[profession])
                         not in all_items["spells"][3]
                     ):
                         # override what player has and give him top profession level
