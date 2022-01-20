@@ -82,11 +82,17 @@ function scanGear()
 				local unique = bit.band(itemSplit[8], 65535)
 				suffix = ",suffix=" .. suffix .. ",unique=" .. unique
 			else suffix = "" end
+
+			--local _, enchantId, gem1, gem2, gem3, gem4 = string.match(itemLink, "item:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+)")
+			local enchantId = itemSplit[2]
+			local gem1 = itemSplit[3]
+			local gem2 = itemSplit[4]
+			local gem3 = itemSplit[5]
 		
 			local itemName, _, _, _, _, _, _, _, _, _, _, classID, subclassID = GetItemInfo(equipID);
 			--print(classID)
 			if (classID == 2 or classID == 4) then
-				addPrint(slotNames[i] .. "=,id=" .. equipID .. suffix)
+				addPrint(slotNames[i] .. "=,id=" .. equipID .. suffix .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 .. ",gem2=" .. gem2 .. ",gem3=" .. gem3)
 				--print(itemName .. "(" .. itemType .. ")");
 					
 			end
@@ -131,6 +137,10 @@ function scanGear()
 				local itemLink = GetContainerItemLink(bag, bagSlots)
 				local itemSplit = GetItemSplit(itemLink)
 				local suffix = itemSplit[7] * -1
+				local enchantId = itemSplit[2]
+				local gem1 = itemSplit[3]
+				local gem2 = itemSplit[4]
+				local gem3 = itemSplit[5]
 				
 				if (suffix ~= -0) then
 					local unique = bit.band(itemSplit[8], 65535)
@@ -145,7 +155,7 @@ function scanGear()
 					--addPrint("# " .. convertSlot(itemEquipLoc) .. "=,id=" .. itemID .. suffix)
 					local _, itemCount = GetContainerItemInfo(bag, bagSlots)
 					--addPrint(itemName)
-					addPrint("id=" .. itemID .. suffix .. ",count=" .. itemCount)
+					addPrint("id=" .. itemID .. suffix .. ",count=" .. itemCount .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 .. ",gem2=" .. gem2 .. ",gem3=" .. gem3)
 					--print(itemName .. "(" .. itemType .. ")");
 					
 				end

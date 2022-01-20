@@ -38,7 +38,7 @@ def parse_file(f, exp):
 
         return result
 
-    def add_to_itemlists(slot_id, item_entry, suffix, bag_id=0,item_count=1):
+    def add_to_itemlists(slot_id, item_entry, suffix, enchant, gems, bag_id=0, item_count=1):
         global inventory_list, instance_list, itemguiditr
         inventory_list += wornTemplate.fill(
             slot_id=slot_id,
@@ -51,6 +51,10 @@ def parse_file(f, exp):
             item_entry=item_entry,
             item_count=item_count,
             item_suffix=-int(suffix),
+            main_enchant=enchant,
+            gem1=gemPropertyMap[gemIDPropertyMap[int(gems[0])]],
+            gem2=gemPropertyMap[gemIDPropertyMap[int(gems[1])]],
+            gem3=gemPropertyMap[gemIDPropertyMap[int(gems[2])]],
             enchant_1=suffixTable[suffix][0],
             enchant_2=suffixTable[suffix][1],
             enchant_3=suffixTable[suffix][2],
@@ -61,12 +65,21 @@ def parse_file(f, exp):
         def parse_slots_base():
             item_info = f[i + equip_offset].split(",")
             suffix = "0"
-            if len(item_info) == 4:
+            enchant = "0"
+            gems = []
+            if len(item_info) == 8:
+                print(item_info)
                 suffix = item_info[2].split("=")[1]
+                enchant = item_info[4].split("=")[1]
+                gems = [item_info[5].split("=")[1], item_info[6].split("=")[1], item_info[7].split("=")[1]]
+            elif len(item_info) == 6:
+                enchant = item_info[2].split("=")[1]
+                gems = [item_info[3].split("=")[1], item_info[4].split("=")[1], item_info[5].split("=")[1]]
+
             item_entry = (
                 f[i + equip_offset].split("=")[2].split(",")[0].replace("\n", "")
             )
-            add_to_itemlists(slotMap[slot], item_entry, suffix)
+            add_to_itemlists(slotMap[slot], item_entry, suffix, enchant, gems)
 
         slots = [
             "head",
@@ -157,19 +170,27 @@ def parse_file(f, exp):
         def parse_bag_base():
             nonlocal firstSlot, bagID
             suffix = "0"
+            enchant = "0"
+            gems = []
             item_data = item.split(",")
             item_count = ""
             item_entry = item_data[0].split("=")
+            print(item_data)
             if len(item_entry) > 1:
                 item_entry = item_entry[1]
             if len(item_data) > 1:
                 item_count = clean(item_data[1].split("=")[1])
-            if len(item_data) == 4:
+            if len(item_data) == 8:
                 item_count = clean(item_data[3].split("=")[1])
                 suffix = item_data[1].split("=")[1]
+                enchant = item_data[4].split("=")[1]
+                gems = [item_data[5].split("=")[1], item_data[6].split("=")[1], item_data[7].split("=")[1]]
+            if len(item_data) == 6:
+                enchant = item_data[2].split("=")[1]
+                gems = [item_data[3].split("=")[1], item_data[4].split("=")[1], item_data[5].split("=")[1]]
             slotID = firstSlot % 28
             bagID = int(firstSlot / 28) + 216
-            add_to_itemlists(slotID, item_entry, suffix, bagID,item_count=item_count)
+            add_to_itemlists(slotID, item_entry, suffix, enchant, gems, bagID, item_count=item_count)
             firstSlot += 1
 
         firstSlot = 23 + 14
