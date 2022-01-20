@@ -3,7 +3,8 @@ Python script to convert exported character-data to an importable pdump format
 
 Uses the data gathered by a forked variant of the Questionably Epic Gear Exporter to recreate a character from Vanilla/TBC Classic servers on CMaNGOS Servers.
 
-Usage: `python3 main.py exported_character.txt [expansion]` the expansion parameter is optional and can either be `0` for 1.13.x/1.12.x or `1` for 2.5.x/2.4.3
+Usage: `python3 main.py exported_character.txt expansion`  
+The expansion parameter is optional and can either be `0` for 1.13.x/1.12.x or `1` for 2.5.x/2.4.3
 
 To import the characters into said cmangos server direct access to the server's filesystem is required. So the final integration either needs to be done by the administrator of said cmangos server, or in some automated way.
 
