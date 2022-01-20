@@ -1,7 +1,7 @@
-# TBC-Classic to CMaNGOS Character converter
-Python script to convert exported character-data to an importable pdump format
+# WoW-Classic to CMaNGOS Character converter
+Export your 1.13.x and 2.5.x characters to 1.12.x and 2.4.3 respectively.
 
-Uses the data gathered by a forked variant of the Questionably Epic Gear Exporter to recreate a character from Vanilla/TBC Classic servers on CMaNGOS Servers.
+Specifically it uses the data gathered by a forked variant of the Questionably Epic Gear Exporter to recreate a character from Vanilla/TBC Classic servers on CMaNGOS Servers.
 
 Usage: `python3 main.py exported_character.txt expansion`  
 The `expansion` parameter is optional and can either be `0` for 1.13.x -> 1.12.x or `1`(default) for 2.5.x -> 2.4.3
