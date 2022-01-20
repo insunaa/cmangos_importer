@@ -14,6 +14,9 @@ To load the data into the server it is imperative that the resulting file *NOT* 
 
 Data *must* be imported with the server `.pdump load` command. To use that one would drop the file created by this script into the working directory of the cmangos mangosd binary and then execute `.pdump load char_dump.sql accountname` whereby "accountname" can be replaced either by the name of the account that the character will be assigned to, or the guid of the account the character will be assigned to.
 
+An example usage scenario may be the server owner creating a subdirectory `characters` in the working directory of the `mangosd` binary, to which FTP access is granted to the users.
+Users can then upload their exported character to this FTP directory and from ingame they can load their character with `.pdump load characters/my_exported_character.sql myaccountnname`
+
 The Addon+Importer combo import the following things:
 
 Character Name, Character Race, Character Class, Character Gender, Equipped Gear, All items in bags\*, All learned spells, All learned Talents, All learned Professions+recipes, Actionbar Buttons\*\*, the character's pet\*\*\*
