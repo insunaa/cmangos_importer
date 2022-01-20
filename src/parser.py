@@ -103,7 +103,7 @@ def parse_file(f, exp):
         petFamily = 0
         petHealth = 30000
         petPower = 100
-        modelId = 18923
+        modelId = 706
         for i in range(equip_offset, 40):
             if "pet" in f[i]:
                 petInfo = f[i].split(",")
