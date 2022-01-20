@@ -1,3 +1,5 @@
+
+from random import random
 from src.constants import *
 
 
@@ -239,7 +241,7 @@ def parse_file(f):
             macros="",
         )
 
-        with open("char_dump.sql", "w") as writer:
+        with open(char_info["char_name"] + str(int(random()*10000)) + ".sql", "w") as writer:
             writer.write(result)
             print("Character conversion successful!")
 
