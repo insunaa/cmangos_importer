@@ -36,7 +36,7 @@ def parse_file(f):
 
         return result
 
-    def add_to_itemlists(slot_id, item_entry, suffix, bag_id=0):
+    def add_to_itemlists(slot_id, item_entry, suffix, bag_id=0,item_count=1):
         global inventory_list, instance_list, itemguiditr
         inventory_list += wornTemplate.fill(
             slot_id=slot_id,
@@ -47,7 +47,7 @@ def parse_file(f):
         instance_list += instanceTemplate.fill(
             item_guid=itemguiditr,
             item_entry=item_entry,
-            item_count=1,
+            item_count=item_count,
             item_suffix=-int(suffix),
             enchant_1=suffixTable[suffix][0],
             enchant_2=suffixTable[suffix][1],
@@ -163,7 +163,7 @@ def parse_file(f):
                 suffix = item_data[1].split("=")[1]
             slotID = firstSlot % 28
             bagID = int(firstSlot / 28) + 216
-            add_to_itemlists(slotID, item_entry, suffix, bagID)
+            add_to_itemlists(slotID, item_entry, suffix, bagID,item_count=item_count)
             firstSlot += 1
 
         firstSlot = 23 + 14
