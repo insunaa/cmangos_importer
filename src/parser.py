@@ -1,4 +1,4 @@
-global spells, skills, Template, inventory_list, instance_list, itemguiditr, action_list, faction_list, learned_professions, pet_list
+global spells, skills, Template, inventory_list, instance_list, itemguiditr, action_list, faction_list, learned_professions, pet_list,skillmap
 
 from src.constants import (
     spells,
@@ -11,6 +11,7 @@ from src.constants import (
     faction_list,
     learned_professions,
     pet_list,
+    skillmap
 )
 
 
