@@ -15,7 +15,7 @@ if sys.stdin and sys.stdin.isatty():
     else:
         sys.exit(1)
 else:
-    filepath = "../generic_export_file"
+    filepath = "./exported.txt"
 
 
 if os.path.isfile(filepath):
