@@ -17,8 +17,12 @@ Character Name, Character Race, Character Class, Character Gender, Equipped Gear
 
 \* Items in the Bank are *not* imported. If you need items from your bank, put them into your inventory before you export.
 
-\*\* Macros are not imported, because the server currently does not support importing them. They are however trivial to copy+paste from the WTF folder. To make them work, `VER 3 SOMELONGHEXADECIMALNUMBER-witharegularnumberattheend` has to be replaced with `MACRO theregularnumberattheendfromebfore`
+\*\* Macros are not imported, because the server currently does not support importing them. They are however exported to the `macros-cache.txt` file, which you can copy to the WTF folder in your 2.4.3 client, specifically:
+`World of Warcraft/WTF/Account/<ACCOUNTNAME>/<ServerName>/<CHARACTERNAME>/macros-cache.txt` they will then appear as regular macros in your `/macros` menu and can be placed into the actionbar.
+Right now this only works for character-specific macros, not account-wide macros. That may be added later.
 
 \*\*\* Pet appearance can't be ported, only the general class of pet. Health values and creature values remain, however no learned abilities are ported at this time. I'm currently not differentiating between warlock pets and hunter pets, so it is advised that warlocks don't export their character data while a pet is summoned, until this issue is fixed
 
 If you have ideas for improvements or find bugs, please open an issue, as I'm sure there are some bugs.
+
+Big thanks to https://github.com/slavanorm/ for his major refactor of this script.
