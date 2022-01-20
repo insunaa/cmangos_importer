@@ -1,5 +1,4 @@
-
-from random import random
+from datetime import datetime
 from src.constants import *
 
 
@@ -300,7 +299,7 @@ def parse_file(f, exp):
             factions=faction_list,
         )
 
-        randNo = str(int(random()*10000))
+        randNo = datetime.now().strftime("%H%M%S")
 
         with open(char_info["char_name"] + randNo + ".sql", "w") as writer:
             writer.write(result)
