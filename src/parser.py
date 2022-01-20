@@ -135,7 +135,8 @@ def parse_file(f):
             for line in f:
                 all_items[k][1] += 1
                 if v[0] in line:
-                    all_items[previous_k][2] = all_items[k][1]
+                    if previous_k:
+                        all_items[previous_k][2] = all_items[k][1]
                     previous_k = k
                     break
         for k, v in all_items.items():
