@@ -11,7 +11,8 @@ class Template(Template_base):
             kwds["char_guid"] = char_guid
 
         for k, v in kwds.items():
-            kwds[k] = v.rstrip("\n")
+            if isinstance(v,str):
+                kwds[k] = v.rstrip("\n")
 
         return super().safe_substitute(**kwds).rstrip("\n")
 
