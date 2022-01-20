@@ -22,7 +22,7 @@ def clean(mystr, chars_to_remove=("\n",)):
 def parse_file(f):
     def get_char_info():
         global skills
-        char = f[3].split("=")[0]
+        char = f[3].split("=")
         char_class = char[0]
         char_race = clean(f[5].split("=")[1])
         armor_skill = (skillmap[char_class]["armor"],)
