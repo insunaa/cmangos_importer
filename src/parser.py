@@ -11,7 +11,7 @@ def parse_file(f):
         char = f[3].split("=")
         char_class = char[0]
         char_race = clean(f[5].split("=")[1])
-        armor_skill = (skillmap[char_class]["armor"],)
+        armor_skill = skillmap[char_class]["armor"]
         weapon_skills = skillmap[char_class]["weapons"]
 
         result = dict(
