@@ -284,8 +284,13 @@ def parse_file(f, exp):
         write_macros(macroBodies)
 
     def write_pdump(char_info):
+        startPos = startPosMap[exp][factions[clean(f[5].split("=")[1])]]
         result = pdumpTemplate.fill(
             **char_info,
+            pos_x=startPos[0],
+            pos_y=startPos[1],
+            pos_z=startPos[2],
+            start_map=startPos[3],
             skills=skills,
             actions=action_list,
             inventory_list=inventory_list,
