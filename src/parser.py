@@ -228,37 +228,12 @@ def parse_file(f):
                 faction_standing=factionStanding,
             )
 
-    def write_pdump(char_info):
-        result = pdumpTemplate.fill(
-            **char_info,
-            skills=skills,
-            actions=action_list,
-            inventory_list=inventory_list,
-            pet_list=pet_list,
-            spells=spells,
-            instance_list=instance_list,
-            factions=faction_list,
-            macros="",
-        )
-
-        with open(char_info["char_name"] + str(int(random()*10000)) + ".sql", "w") as writer:
-            writer.write(result)
-            print("Character conversion successful!")
-
-    char_info = get_char_info()
-    parse_slots_equipped()
-    parse_pet()
-    all_items = get_all_items()
-    parse_bag(all_items)
-    parse_spells(all_items)
-    write_pdump(char_info)
-
-    if False:  # Deactivated because of lacking serverside support
+    def parse_macros():
         macroArrayArray = []
         miniMacroArray = []
         macroCounter = 0
         macroMeta = {}
-        for macro in macrosArray:
+        for macro in all_items["macros"][3]:
             if len(macro.split(",")) > 1:
                 macroInfo = macro.split(",")
                 if "slot" in macroInfo[0]:
@@ -266,7 +241,7 @@ def parse_file(f):
                     macroName = macroInfo[1].split("=")[1]
                     macroTexture = macroInfo[2].split("=")[1]
                     macroMeta[macroSlot] = [macroName, macroTexture]
-        for macro in macrosArray:
+        for macro in all_items["macros"][3]:
             if ("---" in macro) and (macroCounter == 0):
                 macroCounter += 1
                 continue
@@ -287,15 +262,48 @@ def parse_file(f):
         macroBodies = ""
 
         for macroSlot in macroMeta:
+            if (int(macroSlot) < 100):
+                continue
             fullMacro = macroMeta[macroSlot]
             macroBody = ""
             for bodyPart in fullMacro[2]:
-                macroBody += bodyPart + "\\n"
+                macroBody += bodyPart + "\n"
             macroBody = macroBody.rstrip("\n")
             actualBody = singleMacroTemplate.fill(
-                macro_guid=16777217 + int(macroSlot),
+                macro_guid=16777216 + int(macroSlot) - 120,
                 macro_body=macroBody,
                 macro_name=fullMacro[0],
             )
             macroBodies += actualBody
-        macroList += macroTemplate.fill(macros="")
+        write_macros(macroBodies)
+
+    def write_pdump(char_info):
+        result = pdumpTemplate.fill(
+            **char_info,
+            skills=skills,
+            actions=action_list,
+            inventory_list=inventory_list,
+            pet_list=pet_list,
+            spells=spells,
+            instance_list=instance_list,
+            factions=faction_list,
+        )
+
+        randNo = str(int(random()*10000))
+
+        with open(char_info["char_name"] + randNo + ".sql", "w") as writer:
+            writer.write(result)
+            print("Character conversion successful! Export written to: " + char_info["char_name"] + randNo + ".sql")
+
+    def write_macros(macro_file):
+        with open("macros-cache.txt", "w") as writer:
+            writer.write(macro_file)
+
+    char_info = get_char_info()
+    parse_slots_equipped()
+    parse_pet()
+    all_items = get_all_items()
+    parse_bag(all_items)
+    parse_spells(all_items)
+    parse_macros()
+    write_pdump(char_info)

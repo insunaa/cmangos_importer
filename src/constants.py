@@ -280,7 +280,6 @@ INSERT INTO `item_instance` VALUES ('220', '$char_guid', '23162', '0', '0', '1',
 $instance_list
 $actions
 $factions
-$macros
 """
 )
 
@@ -316,11 +315,9 @@ factionTemplate = Template(
 )
 
 singleMacroTemplate = Template(
-    """MACRO $macro_guid "$macro_name" INV_Misc_QuestionMark\\n$macro_body\\nEND\\n"""
+    """MACRO $macro_guid "$macro_name" INV_Misc_QuestionMark
+$macro_body
+END\n"""
 )
 
-macroTemplate = Template(
-    """INSERT INTO `character_account_data` VALUES ('$char_guid', '4', '0', `$macros`);
-"""
-)
 # endregion
