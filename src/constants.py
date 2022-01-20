@@ -14,7 +14,7 @@ class Template(Template_base):
             if isinstance(v,str):
                 kwds[k] = v.rstrip("\n")
 
-        return super().safe_substitute(**kwds).rstrip("\n")
+        return super().safe_substitute(**kwds) #.rstrip("\n")
 
 
 # region constants
