@@ -128,7 +128,7 @@ def parse_file(f):
             actions=["ACTIONS", 0, 0, []],
             macros=["MACROS", 0, 0, []],
             spells=["SPELLS", 0, 0, []],
-            faction=["FACTIONS", 0, len(f), []],
+            factions=["FACTIONS", 0, len(f), []],
         )
         previous_k = ""
         for k, v in all_items.items():
@@ -140,8 +140,10 @@ def parse_file(f):
                     previous_k = k
                     break
         for k, v in all_items.items():
-            for i in range(v[1], v[2] + 1):
-                v[3].append(f[i])
+            for i in range(v[1], v[2] -1):
+                text = f[i].rstrip("\n")
+                if text:
+                    v[3].append(text)
 
         return all_items
 

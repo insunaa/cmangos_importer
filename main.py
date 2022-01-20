@@ -4,7 +4,8 @@ import sys
 import os.path
 from src.parser import parse_file
 
-
+filepath = "../generic_export_file"
+"""
 if len(sys.argv) == 2:
     filepath = sys.argv[1]
 elif len(sys.argv) == 1:
@@ -12,6 +13,7 @@ elif len(sys.argv) == 1:
     sys.exit(0)
 else:
     sys.exit(1)
+"""
 
 if os.path.isfile(filepath):
     with open(filepath) as file:
