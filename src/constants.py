@@ -226,7 +226,7 @@ professionSkillMap = {
     "leatherworking": 165,
     "tailoring": 197,
     "cooking": 185,
-    "firstaid": 192,
+    "firstaid": 129,
 }
 
 professionSpellMap = { 0 : {
