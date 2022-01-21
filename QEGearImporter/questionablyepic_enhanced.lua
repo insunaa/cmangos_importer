@@ -238,6 +238,7 @@ function scanGear()
 		for j = offset+1, offset+numSlots do
 			local spellType, spellID = GetSpellBookItemInfo(j, BOOKTYPE_SPELL)
 			if (Druid[spellID] or Hunter[spellID] or Mage[spellID] or Paladin[spellID] or Priest[spellID] or Rogue[spellID] or Shaman[spellID] or Warlock[spellID] or Warrior[spellID]
+				or DruidVan[spellID] or HunterVan[spellID] or MageVan[spellID] or PaladinVan[spellID] or PriestVan[spellID] or RogueVan[spellID] or ShamanVan[spellID] or WarlockVan[spellID] or WarriorVan[spellID]
 				or Alchemy[spellID] or Engineering[spellID] or Blacksmithing[spellID] or Enchanting[spellID] or Jewelcrafting[spellID] or Leatherworking[spellID] or Tailoring [spellID]
 				or Cooking[spellID] or FirstAid[spellID]) then
 				--Skip because we'll manually add talent and profession spells later
