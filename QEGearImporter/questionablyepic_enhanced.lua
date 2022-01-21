@@ -88,17 +88,23 @@ function scanGear()
 			local gem1 = itemSplit[3]
 			local gem2 = itemSplit[4]
 			local gem3 = itemSplit[5]
-		
+			SocketInventoryItem(i)
+			gemColors = {nil, nil, nil}
+			for j=1, GetNumSockets() do
+				_, _, gemColors[j] = GetExistingSocketInfo(j)
+			end
+			CloseSocketInfo()
 			local itemName, _, _, _, _, _, _, _, _, _, _, classID, subclassID = GetItemInfo(equipID);
 			--print(classID)
 			if (classID == 2 or classID == 4) then
-				addPrint(slotNames[i] .. "=,id=" .. equipID .. suffix .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 .. ",gem2=" .. gem2 .. ",gem3=" .. gem3)
+				addPrint(slotNames[i] .. "=,id=" .. equipID .. suffix .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]))
 				--print(itemName .. "(" .. itemType .. ")");
 					
 			end
 		end
-	
+		
 	end
+	
 
 	local ammoID = GetInventoryItemID("player", 0);
 	if (ammoID ~= nil) then
@@ -147,6 +153,12 @@ function scanGear()
 					suffix = ",suffix=" .. suffix .. ",unique=" .. unique
 				else suffix = "" end
 				
+				SocketContainerItem(bag, bagSlots)
+				gemColors = {nil, nil, nil}
+				for j=1, GetNumSockets() do
+					_, _, gemColors[j] = GetExistingSocketInfo(j)
+				end
+				CloseSocketInfo()
 				
 				--if ((classID == 2 or classID == 4) and checkIfUsable(classID, subclassID)) then
 				if (true or classID == 2 or classID == 4) then
@@ -155,7 +167,7 @@ function scanGear()
 					--addPrint("# " .. convertSlot(itemEquipLoc) .. "=,id=" .. itemID .. suffix)
 					local _, itemCount = GetContainerItemInfo(bag, bagSlots)
 					--addPrint(itemName)
-					addPrint("id=" .. itemID .. suffix .. ",count=" .. itemCount .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 .. ",gem2=" .. gem2 .. ",gem3=" .. gem3)
+					addPrint("id=" .. itemID .. suffix .. ",count=" .. itemCount .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]))
 					--print(itemName .. "(" .. itemType .. ")");
 					
 				end

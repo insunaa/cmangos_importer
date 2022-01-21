@@ -40,21 +40,26 @@ def parse_file(f, exp):
 
     def add_to_itemlists(slot_id, item_entry, suffix, enchant, gems, bag_id=0, item_count=1):
         global inventory_list, instance_list, itemguiditr
+        socketBonus = 0
         inventory_list += wornTemplate.fill(
             slot_id=slot_id,
             item_guid=itemguiditr,
             item_entry=item_entry,
             bag_id=bag_id,
         )
+        sockets = [gems[0].split(":")[1], gems[1].split(":")[1], gems[2].split(":")[1]]
+        if "false" not in sockets and "true" in sockets:
+            socketBonus = itemSocketBonusMap[int(item_entry)]
         instance_list += instanceTemplate.fill(
             item_guid=itemguiditr,
             item_entry=item_entry,
             item_count=item_count,
             item_suffix=-int(suffix),
             main_enchant=enchant,
-            gem1=gemPropertyMap[gemIDPropertyMap[int(gems[0])]],
-            gem2=gemPropertyMap[gemIDPropertyMap[int(gems[1])]],
-            gem3=gemPropertyMap[gemIDPropertyMap[int(gems[2])]],
+            gem1=gemPropertyMap[gemIDPropertyMap[int(gems[0].split(":")[0])]],
+            gem2=gemPropertyMap[gemIDPropertyMap[int(gems[1].split(":")[0])]],
+            gem3=gemPropertyMap[gemIDPropertyMap[int(gems[2].split(":")[0])]],
+            socket_bonus=socketBonus,
             enchant_1=suffixTable[suffix][0],
             enchant_2=suffixTable[suffix][1],
             enchant_3=suffixTable[suffix][2],
