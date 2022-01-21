@@ -1,4 +1,5 @@
 from datetime import datetime
+import math
 from src.constants import *
 
 
@@ -48,21 +49,27 @@ def parse_file(f, exp):
             bag_id=bag_id,
         )
         sockets = [gems[0].split(":")[1], gems[1].split(":")[1], gems[2].split(":")[1]]
+        suffix = int(suffix)
+        suffix= int(math.sqrt(suffix*suffix))
+        if exp == 1:
+            suffix = -suffix
+        elif exp == 0:
+            suffix = 0
         if "false" not in sockets and "true" in sockets:
             socketBonus = itemSocketBonusMap[int(item_entry)]
         instance_list += instanceTemplate.fill(
             item_guid=itemguiditr,
             item_entry=item_entry,
             item_count=item_count,
-            item_suffix=-int(suffix),
+            item_suffix=suffix,
             main_enchant=enchant,
             gem1=gemPropertyMap[gemIDPropertyMap[int(gems[0].split(":")[0])]],
             gem2=gemPropertyMap[gemIDPropertyMap[int(gems[1].split(":")[0])]],
             gem3=gemPropertyMap[gemIDPropertyMap[int(gems[2].split(":")[0])]],
             socket_bonus=socketBonus,
-            enchant_1=suffixTable[suffix][0],
-            enchant_2=suffixTable[suffix][1],
-            enchant_3=suffixTable[suffix][2],
+            enchant_1=suffixTable[str(suffix)][0],
+            enchant_2=suffixTable[str(suffix)][1],
+            enchant_3=suffixTable[str(suffix)][2],
         )
         itemguiditr += 2
 
