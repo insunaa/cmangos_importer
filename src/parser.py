@@ -311,6 +311,7 @@ def parse_file(f, exp):
         result = pdumpTemplate.fill(
             **char_info,
             database_version=version,
+            pos_x=startPos[0],
             pos_y=startPos[1],
             pos_z=startPos[2],
             start_map=startPos[3],
