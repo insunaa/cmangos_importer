@@ -275,7 +275,7 @@ def parse_file(f, exp):
                 macroCounter = 0
                 continue
             if macroCounter > 0:
-                miniMacroArray.append(macro.replace("\n", ""))
+                miniMacroArray.append(macro.replace("\n", "").replace("@", "target="))
                 macroCounter += 1
                 continue
         i = 0
