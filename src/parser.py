@@ -68,7 +68,6 @@ def parse_file(f, exp):
             enchant = "0"
             gems = []
             if len(item_info) == 8:
-                print(item_info)
                 suffix = item_info[2].split("=")[1]
                 enchant = item_info[4].split("=")[1]
                 gems = [item_info[5].split("=")[1], item_info[6].split("=")[1], item_info[7].split("=")[1]]
@@ -175,7 +174,6 @@ def parse_file(f, exp):
             item_data = item.split(",")
             item_count = ""
             item_entry = item_data[0].split("=")
-            print(item_data)
             if len(item_entry) > 1:
                 item_entry = item_entry[1]
             if len(item_data) > 1:
@@ -305,9 +303,14 @@ def parse_file(f, exp):
 
     def write_pdump(char_info):
         startPos = startPosMap[exp][factions[clean(f[5].split("=")[1])]]
+        version = ""
+        if exp == 0:
+            version = "required_z2775_01_characters_raf"
+        else:
+            version = "required_s2429_01_characters_raf"
         result = pdumpTemplate.fill(
             **char_info,
-            pos_x=startPos[0],
+            database_version=version,
             pos_y=startPos[1],
             pos_z=startPos[2],
             start_map=startPos[3],
