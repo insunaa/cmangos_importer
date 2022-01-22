@@ -51,23 +51,29 @@ def parse_file(f, exp):
         sockets = [gems[0].split(":")[1], gems[1].split(":")[1], gems[2].split(":")[1]]
         suffix = int(suffix)
         suffix= int(math.sqrt(suffix*suffix))
+        enchantments = ""
         if exp == 0:
             suffix = 0
-        if "false" not in sockets and "true" in sockets:
-            socketBonus = itemSocketBonusMap[int(item_entry)]
+            enchantments = instanceEnchantTemplateVan.fill(main_enchant=enchant, enchant_1=suffixTable[str(suffix)][0], enchant_2 = suffixTable[str(suffix)][0], enchant_3 = suffixTable[str(suffix)][0])
+        else:
+            if "false" not in sockets and "true" in sockets:
+                socketBonus = itemSocketBonusMap[int(item_entry)]
+            enchantments = instanceEnchantTemplateTBC.fill(
+                main_enchant=enchant,
+                gem1=gemPropertyMap[gemIDPropertyMap[int(gems[0].split(":")[0])]],
+                gem2=gemPropertyMap[gemIDPropertyMap[int(gems[1].split(":")[0])]],
+                gem3=gemPropertyMap[gemIDPropertyMap[int(gems[2].split(":")[0])]],
+                socket_bonus=socketBonus,
+                enchant_1=suffixTable[str(suffix)][0],
+                enchant_2=suffixTable[str(suffix)][1],
+                enchant_3=suffixTable[str(suffix)][2],
+                )
         instance_list += instanceTemplate.fill(
             item_guid=itemguiditr,
             item_entry=item_entry,
             item_count=item_count,
             item_suffix=suffix,
-            main_enchant=enchant,
-            gem1=gemPropertyMap[gemIDPropertyMap[int(gems[0].split(":")[0])]],
-            gem2=gemPropertyMap[gemIDPropertyMap[int(gems[1].split(":")[0])]],
-            gem3=gemPropertyMap[gemIDPropertyMap[int(gems[2].split(":")[0])]],
-            socket_bonus=socketBonus,
-            enchant_1=suffixTable[str(suffix)][0],
-            enchant_2=suffixTable[str(suffix)][1],
-            enchant_3=suffixTable[str(suffix)][2],
+            enchantments=enchantments,
         )
         itemguiditr += 2
 
@@ -315,8 +321,10 @@ def parse_file(f, exp):
         startPos = startPosMap[exp][factions[clean(f[5].split("=")[1])]]
         version = ""
         charactersRow = ""
+        enchantments = ""
         if exp == 0:
             version = "required_z2775_01_characters_raf"
+            enchantments = instanceEnchantTemplateVan.fill(main_enchant=0, enchant_1=0, enchant_2=0, enchant_3=0)
             charactersRow = charactersTemplateVan.fill(
                 **char_info,
                 pos_x=startPos[0],
@@ -325,6 +333,7 @@ def parse_file(f, exp):
                 start_map=startPos[3])
         else:
             version = "required_s2429_01_characters_raf"
+            enchantments = instanceEnchantTemplateTBC.fill(main_enchant=0, gem1=0, gem2=0, gem3=0, socket_bonus=0, enchant_1=0, enchant_2=0, enchant_3=0)
             charactersRow = charactersTemplateTBC.fill(
                 **char_info,
                 pos_x=startPos[0],
@@ -333,7 +342,8 @@ def parse_file(f, exp):
                 start_map=startPos[3])
 
         result = pdumpTemplate.fill(
-            characters_row = charactersRow,
+            characters_row=charactersRow,
+            enchantments=enchantments,
             database_version=version,
             pos_x=startPos[0],
             pos_y=startPos[1],
