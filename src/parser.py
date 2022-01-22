@@ -51,9 +51,7 @@ def parse_file(f, exp):
         sockets = [gems[0].split(":")[1], gems[1].split(":")[1], gems[2].split(":")[1]]
         suffix = int(suffix)
         suffix= int(math.sqrt(suffix*suffix))
-        if exp == 1:
-            suffix = -suffix
-        elif exp == 0:
+        if exp == 0:
             suffix = 0
         if "false" not in sockets and "true" in sockets:
             socketBonus = itemSocketBonusMap[int(item_entry)]
@@ -316,12 +314,26 @@ def parse_file(f, exp):
     def write_pdump(char_info):
         startPos = startPosMap[exp][factions[clean(f[5].split("=")[1])]]
         version = ""
+        charactersRow = ""
         if exp == 0:
             version = "required_z2775_01_characters_raf"
+            charactersRow = charactersTemplateVan.fill(
+                **char_info,
+                pos_x=startPos[0],
+                pos_y=startPos[1],
+                pos_z=startPos[2],
+                start_map=startPos[3])
         else:
             version = "required_s2429_01_characters_raf"
+            charactersRow = charactersTemplateTBC.fill(
+                **char_info,
+                pos_x=startPos[0],
+                pos_y=startPos[1],
+                pos_z=startPos[2],
+                start_map=startPos[3])
+
         result = pdumpTemplate.fill(
-            **char_info,
+            characters_row = charactersRow,
             database_version=version,
             pos_x=startPos[0],
             pos_y=startPos[1],
