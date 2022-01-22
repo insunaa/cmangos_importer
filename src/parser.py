@@ -202,8 +202,8 @@ def parse_file(f, exp):
             if len(item_data) == 6:
                 enchant = item_data[2].split("=")[1]
                 gems = [item_data[3].split("=")[1], item_data[4].split("=")[1], item_data[5].split("=")[1]]
-            slotID = firstSlot % 28
-            bagID = int(firstSlot / 28) + 216
+            slotID = firstSlot % 18
+            bagID = int(firstSlot / 18) + 216
             add_to_itemlists(slotID, item_entry, suffix, enchant, gems, bagID, item_count=item_count)
             firstSlot += 1
 
@@ -322,9 +322,11 @@ def parse_file(f, exp):
         version = ""
         charactersRow = ""
         enchantments = ""
+        bagId = 23162
         if exp == 0:
             version = "required_z2775_01_characters_raf"
             enchantments = instanceEnchantTemplateVan.fill(main_enchant=0, enchant_1=0, enchant_2=0, enchant_3=0)
+            bagId = 14156
             charactersRow = charactersTemplateVan.fill(
                 **char_info,
                 pos_x=startPos[0],
@@ -342,6 +344,7 @@ def parse_file(f, exp):
                 start_map=startPos[3])
 
         result = pdumpTemplate.fill(
+            bag_id=bagId,
             characters_row=charactersRow,
             enchantments=enchantments,
             database_version=version,

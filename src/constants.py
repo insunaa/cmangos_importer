@@ -475,18 +475,18 @@ UPDATE character_db_version SET $database_version = 1 WHERE FALSE;
 $characters_row
 INSERT INTO `character_homebind` VALUES ('$char_guid', '$start_map', '3703', '$pos_x', '$pos_y', '$pos_z');
 INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '24', '184', '6948'); -- Hearthstone
-INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '19', '217', '23162'); -- Large Bag
-INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '22', '218', '23162'); -- Large Bag
-INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '21', '219', '23162'); -- Large Bag
-INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '20', '220', '23162'); -- Large Bag
+INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '19', '217', '$bag_id'); -- Large Bag
+INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '22', '218', '$bag_id'); -- Large Bag
+INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '21', '219', '$bag_id'); -- Large Bag
+INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '20', '220', '$bag_id'); -- Large Bag
 $inventory_list$pet_list
 $skills
 $spells
 INSERT INTO `item_instance` VALUES ('184', '$char_guid', '6948', '0', '0', '1', '0', '0 0 0 0 0 ', '1', '$enchantments', '0', '100', '0');
-INSERT INTO `item_instance` VALUES ('217', '$char_guid', '23162', '0', '0', '1', '0', '0 0 0 0 0 ', '1', '$enchantments', '0', '100', '0');
-INSERT INTO `item_instance` VALUES ('218', '$char_guid', '23162', '0', '0', '1', '0', '0 0 0 0 0 ', '1', '$enchantments', '0', '100', '0');
-INSERT INTO `item_instance` VALUES ('219', '$char_guid', '23162', '0', '0', '1', '0', '0 0 0 0 0 ', '1', '$enchantments', '0', '100', '0');
-INSERT INTO `item_instance` VALUES ('220', '$char_guid', '23162', '0', '0', '1', '0', '0 0 0 0 0 ', '1', '$enchantments', '0', '100', '0');
+INSERT INTO `item_instance` VALUES ('217', '$char_guid', '$bag_id', '0', '0', '1', '0', '0 0 0 0 0 ', '1', '$enchantments', '0', '100', '0');
+INSERT INTO `item_instance` VALUES ('218', '$char_guid', '$bag_id', '0', '0', '1', '0', '0 0 0 0 0 ', '1', '$enchantments', '0', '100', '0');
+INSERT INTO `item_instance` VALUES ('219', '$char_guid', '$bag_id', '0', '0', '1', '0', '0 0 0 0 0 ', '1', '$enchantments', '0', '100', '0');
+INSERT INTO `item_instance` VALUES ('220', '$char_guid', '$bag_id', '0', '0', '1', '0', '0 0 0 0 0 ', '1', '$enchantments', '0', '100', '0');
 $instance_list
 $actions
 $factions
