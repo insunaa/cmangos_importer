@@ -49,8 +49,7 @@ def parse_file(f, exp):
             bag_id=bag_id,
         )
         sockets = [gems[0].split(":")[1], gems[1].split(":")[1], gems[2].split(":")[1]]
-        suffix = int(suffix)
-        suffix= int(math.sqrt(suffix*suffix))
+        suffix = abs(int(suffix))
         enchantments = ""
         if exp == 0:
             suffix = 0
@@ -72,7 +71,7 @@ def parse_file(f, exp):
             item_guid=itemguiditr,
             item_entry=item_entry,
             item_count=item_count,
-            item_suffix=suffix,
+            item_suffix=-suffix,
             enchantments=enchantments,
         )
         itemguiditr += 2
@@ -202,8 +201,8 @@ def parse_file(f, exp):
             if len(item_data) == 6:
                 enchant = item_data[2].split("=")[1]
                 gems = [item_data[3].split("=")[1], item_data[4].split("=")[1], item_data[5].split("=")[1]]
-            slotID = firstSlot % 18
-            bagID = int(firstSlot / 18) + 216
+            slotID = firstSlot % 28
+            bagID = int(firstSlot / 28) + 216
             add_to_itemlists(slotID, item_entry, suffix, enchant, gems, bagID, item_count=item_count)
             firstSlot += 1
 
