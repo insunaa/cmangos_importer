@@ -27,7 +27,7 @@ Character Name, Character Race, Character Class, Character Gender, Equipped Gear
 `World of Warcraft/WTF/Account/<ACCOUNTNAME>/<ServerName>/<CHARACTERNAME>/macros-cache.txt` they will then appear as regular macros in your `/macros` menu and can be placed into the actionbar.
 Right now this only works for character-specific macros, not account-wide macros. That may be added later.
 
-\*\*\* Pet appearance can't be ported, only the general class of pet. Health values and creature values remain, however no learned abilities are ported at this time.
+\*\*\* Pet appearance can't be ported, only the general class of pet. Health values and creature values remain, however spells have to be relearned with Beast Training.
 
 If you have ideas for improvements or find bugs, please open an issue, as I'm sure there are some bugs.
 
