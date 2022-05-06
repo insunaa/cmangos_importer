@@ -57,6 +57,8 @@ def parse_file(f, exp):
         else:
             if "false" not in sockets and "true" in sockets:
                 socketBonus = itemSocketBonusMap[int(item_entry)]
+            if str(suffix) not in suffixTable:
+                suffix = 0
             enchantments = instanceEnchantTemplateTBC.fill(
                 main_enchant=enchant,
                 gem1=gemPropertyMap[gemIDPropertyMap[int(gems[0].split(":")[0])]],
