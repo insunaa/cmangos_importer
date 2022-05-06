@@ -225,9 +225,9 @@ function scanGear()
 	for t=1, numMacros do
 		local name, iconTexture, body, isLocal = GetMacroInfo(t);
 		if (name ~= nil) then
-			addPrint("slot="..t..",name="..name..",texture="..iconTexture..",body=")
+			addPrint("slot="..t..",name="..string.gsub(name, ",", ".")..",texture="..iconTexture..",body=")
 			addPrint("---")
-			addPrint(body)
+			addPrint(string.gsub(body, ",", "."))
 			addPrint("---")
 		end
 	end
