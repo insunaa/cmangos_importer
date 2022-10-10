@@ -325,7 +325,7 @@ def parse_file(f, exp):
         enchantments = ""
         bagId = 23162
         if exp == 0:
-            version = "required_z2775_01_characters_raf"
+            version = "required_z2796_01_characters_fishingSteps"
             enchantments = instanceEnchantTemplateVan.fill(main_enchant=0, enchant_1=0, enchant_2=0, enchant_3=0)
             bagId = 14156
             charactersRow = charactersTemplateVan.fill(
@@ -335,7 +335,7 @@ def parse_file(f, exp):
                 pos_z=startPos[2],
                 start_map=startPos[3])
         else:
-            version = "required_s2429_01_characters_raf"
+            version = "required_s2452_01_characters_fishingSteps"
             enchantments = instanceEnchantTemplateTBC.fill(main_enchant=0, gem1=0, gem2=0, gem3=0, socket_bonus=0, enchant_1=0, enchant_2=0, enchant_3=0)
             charactersRow = charactersTemplateTBC.fill(
                 **char_info,
