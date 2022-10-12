@@ -28,7 +28,7 @@ inventory_list = ""
 instance_list = ""
 itemguiditr = 10000
 char_guid = 500
-equip_offset = 14
+equip_offset = 15
 learned_professions = {
     "alchemy": False,
     "enchanting": False,
@@ -39,6 +39,7 @@ learned_professions = {
     "tailoring": False,
     "cooking": False,
     "firstaid": False,
+    "inscription": False,
 }
 # endregion
 
