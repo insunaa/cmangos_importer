@@ -439,16 +439,32 @@ function scanGear()
 	addPrint("### GLYPHS ###")
 
 	local glyphIndex = 1
-	local talentGroupIndex = 1
-	while (talentGroupIndex <= GetNumTalentGroups()) do
-		while (glyphIndex <= GetNumGlyphSockets()) do
-			local _, _, glyphSpellID, _ = GetGlyphSocketInfo(glyphIndex, talentGroupIndex)
-			if (glyphSpellID ~= nil) then
-				addPrint(glyphSpellID)
-			end
-			glyphIndex = glyphIndex + 1
+	while (glyphIndex <= GetNumGlyphSockets()) do
+		local talentGroup = GetActiveTalentGroup(false, false)
+		local _, _, glyphSpellID, _ = GetGlyphSocketInfo(glyphIndex, talentGroup)
+		if (glyphSpellID ~= nil) then
+			addPrint(glyphSpellID)
 		end
-		talentGroupIndex = talentGroupIndex +1
+		glyphIndex = glyphIndex + 1
+	end
+
+	addPrint("")
+	addPrint("### ACHIEVEMENTS ###")
+
+	local categories = GetCategoryList()
+	
+	for k,j in ipairs(categories) do
+		if (j ~= nil) then
+			local achievementId = 1
+			local numAchievs, _, _ = GetCategoryNumAchievements(j)
+			while (achievementId <= numAchievs) do
+				local id, _, _, completed, month, day, year, _, _, _, _, _, _, _, _ = GetAchievementInfo(j, achievementId)
+				if (id ~= nil and completed ~= nil and year ~= nil and month ~=nil and day ~= nil) then
+					addPrint(id .. "," .. year .. "," .. month .. "," .. day)
+				end
+				achievementId = achievementId + 1
+			end
+		end
 	end
 	
 	addPrint("")
