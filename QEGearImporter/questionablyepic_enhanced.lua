@@ -66,6 +66,7 @@ function scanGear()
 	addPrint("professions=N/A")
 	addPrint("talents=N/A")
 	addPrint("spec=N/A")
+	addPrint("expansion=" .. GetExpansionLevel())
 	addPrint(" ")
 	
 	-- for loop for equipment
