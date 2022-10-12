@@ -470,6 +470,11 @@ function scanGear()
 				end
 			end
 		end
+	else
+		addPrint("")
+		addPrint("### GLYPHS ###")
+		addPrint("")
+		addPrint("### ACHIEVEMENTS ###")
 	end
 	
 	addPrint("")
