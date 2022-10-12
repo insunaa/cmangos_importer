@@ -349,7 +349,7 @@ def parse_file(f, exp):
                 pos_z=startPos[2],
                 start_map=startPos[3])
         else:
-            version = "required_s2452_01_characters_fishingSteps"
+            version = "required_14061_01_characters_fishingSteps"
             enchantments = instanceEnchantTemplateTBC.fill(main_enchant=0, gem1=0, gem2=0, gem3=0, socket_bonus=0, enchant_1=0, enchant_2=0, enchant_3=0)
             charactersRow = charactersTemplateTBC.fill(
                 **char_info,
