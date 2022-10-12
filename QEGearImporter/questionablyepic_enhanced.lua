@@ -435,34 +435,38 @@ function scanGear()
 		factionIndex = factionIndex + 1
 	end
 
-	addPrint("")
-	addPrint("### GLYPHS ###")
+	local expansion = GetExpansionLevel()
 
-	local glyphIndex = 1
-	while (glyphIndex <= GetNumGlyphSockets()) do
-		local talentGroup = GetActiveTalentGroup(false, false)
-		local _, _, glyphSpellID, _ = GetGlyphSocketInfo(glyphIndex, talentGroup)
-		if (glyphSpellID ~= nil) then
-			addPrint(glyphSpellID)
+	if (expansion == 2) then
+		addPrint("")
+		addPrint("### GLYPHS ###")
+
+		local glyphIndex = 1
+		while (glyphIndex <= GetNumGlyphSockets()) do
+			local talentGroup = GetActiveTalentGroup(false, false)
+			local _, _, glyphSpellID, _ = GetGlyphSocketInfo(glyphIndex, talentGroup)
+			if (glyphSpellID ~= nil) then
+				addPrint(glyphSpellID)
+			end
+			glyphIndex = glyphIndex + 1
 		end
-		glyphIndex = glyphIndex + 1
-	end
 
-	addPrint("")
-	addPrint("### ACHIEVEMENTS ###")
+		addPrint("")
+		addPrint("### ACHIEVEMENTS ###")
 
-	local categories = GetCategoryList()
-	
-	for k,j in ipairs(categories) do
-		if (j ~= nil) then
-			local achievementId = 1
-			local numAchievs, _, _ = GetCategoryNumAchievements(j)
-			while (achievementId <= numAchievs) do
-				local id, _, _, completed, month, day, year, _, _, _, _, _, _, _, _ = GetAchievementInfo(j, achievementId)
-				if (id ~= nil and completed ~= nil and year ~= nil and month ~=nil and day ~= nil) then
-					addPrint(id .. "," .. year .. "," .. month .. "," .. day)
+		local categories = GetCategoryList()
+		
+		for k,j in ipairs(categories) do
+			if (j ~= nil) then
+				local achievementId = 1
+				local numAchievs, _, _ = GetCategoryNumAchievements(j)
+				while (achievementId <= numAchievs) do
+					local id, _, _, completed, month, day, year, _, _, _, _, _, _, _, _ = GetAchievementInfo(j, achievementId)
+					if (id ~= nil and completed ~= nil and year ~= nil and month ~=nil and day ~= nil) then
+						addPrint(id .. "," .. year .. "," .. month .. "," .. day)
+					end
+					achievementId = achievementId + 1
 				end
-				achievementId = achievementId + 1
 			end
 		end
 	end

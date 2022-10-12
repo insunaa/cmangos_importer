@@ -22,6 +22,7 @@ def parse_file(f, exp):
             char_class=classes[char_class],
             char_race=races[char_race],
             char_level=clean(f[4].split("=")[1]),
+            char_expansion=clean(f[13].split("=")[1]),
         )
 
         if len(armor_skill):
