@@ -330,7 +330,7 @@ def parse_file(f, exp):
         enchantments = ""
         bagId = 23162
         if exp == 0:
-            version = "required_z2796_01_characters_fishingSteps"
+            version = "required_z2799_01_characters_account_data"
             enchantments = instanceEnchantTemplateVan.fill(main_enchant=0, enchant_1=0, enchant_2=0, enchant_3=0)
             bagId = 14156
             charactersRow = charactersTemplateVan.fill(
