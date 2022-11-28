@@ -373,6 +373,15 @@ def parse_file(f, exp):
             )
             macroBodies += actualBody
         write_macros(macroBodies)
+    
+    def parse_glyphs():
+        global glyphs
+
+        for glyph in all_items["glyphs"][3]:
+            glyphslot = int(glyph.split(",")[0])
+            glyphspell = glyph.split(",")[1]
+            if glyphspell in glyphMap:
+                glyphs += glyphTemplate.fill(glyph_slot=glyphslot-1,glyph_id=glyphMap[glyphspell])
 
     def write_pdump(char_info):
         startPos = startPosMap[exp][factions[clean(f[5].split("=")[1])]]
@@ -429,6 +438,7 @@ def parse_file(f, exp):
             instance_list=instance_list,
             factions=faction_list,
             text=textIns,
+            glyphs=glyphs,
         )
 
         randNo = datetime.now().strftime("%H%M%S")
@@ -448,4 +458,5 @@ def parse_file(f, exp):
     parse_bag(all_items)
     parse_spells(all_items)
     parse_macros()
+    parse_glyphs()
     write_pdump(char_info)

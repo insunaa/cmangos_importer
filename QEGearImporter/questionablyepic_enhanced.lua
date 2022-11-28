@@ -458,7 +458,7 @@ function scanGear()
 			local talentGroup = GetActiveTalentGroup(false, false)
 			local _, _, glyphSpellID, _ = GetGlyphSocketInfo(glyphIndex, talentGroup)
 			if (glyphSpellID ~= nil) then
-				addPrint(glyphSpellID)
+				addPrint(glyphIndex .. "," .. glyphSpellID)
 			end
 			glyphIndex = glyphIndex + 1
 		end
