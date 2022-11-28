@@ -306,7 +306,7 @@ function scanGear()
 			addPrint(creatureSpellID)
 		end
 		for i=1,GetNumCompanions("MOUNT") do
-			local creatureID, creatureName, creatureSpellID, icon, issummoned = GetCompanionInfo("CRITTER", i);
+			local creatureID, creatureName, creatureSpellID, icon, issummoned = GetCompanionInfo("MOUNT", i);
 			addPrint(creatureSpellID)
 		end
 	end
