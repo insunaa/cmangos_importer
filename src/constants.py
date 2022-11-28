@@ -26,6 +26,7 @@ skills = ""
 spells = ""
 talents = ""
 glyphs = ""
+achievements = ""
 inventory_list = ""
 instance_list = ""
 itemguiditr = 10000
@@ -1171,6 +1172,7 @@ IMPORTANT NOTE: NOT APPLY ITS DIRECTLY to character DB or you will DAMAGE and CO
 UPDATE character_db_version SET $database_version = 1 WHERE FALSE;
 
 $characters_row
+$achievements
 $glyphs
 INSERT INTO `character_homebind` VALUES ('$char_guid', '$start_map', '3703', '$pos_x', '$pos_y', '$pos_z');
 INSERT INTO `character_inventory` VALUES ('$char_guid', '0', '24', '184', '6948'); -- Hearthstone
@@ -1247,6 +1249,10 @@ factionTemplate = Template(
 
 glyphTemplate = Template(
     "INSERT INTO `character_glyphs` VALUES ('$char_guid', '0', '$glyph_slot', '$glyph_id');\n"
+)
+
+achievementTemplate = Template(
+    "INSERT INTO `character_achievement` VALUES ('$char_guid', '$achievement_id', '$timestamp');\n"
 )
 
 singleMacroTemplate = Template(

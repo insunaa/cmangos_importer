@@ -1,4 +1,6 @@
 from datetime import datetime
+import datetime
+import time
 import math
 from src.constants import *
 
@@ -376,12 +378,22 @@ def parse_file(f, exp):
     
     def parse_glyphs():
         global glyphs
-
         for glyph in all_items["glyphs"][3]:
             glyphslot = int(glyph.split(",")[0])
             glyphspell = glyph.split(",")[1]
             if glyphspell in glyphMap:
                 glyphs += glyphTemplate.fill(glyph_slot=glyphslot-1,glyph_id=glyphMap[glyphspell])
+
+    def parse_achievements():
+        global achievements
+        for achievement in all_items["achievements"][3]:
+            achId = achievement.split(",")[0]
+            year = int(achievement.split(",")[1])
+            month = int(achievement.split(",")[2])
+            day = int(achievement.split(",")[3])
+            date_time = datetime.datetime(year+2000, month, day, 0, 0)
+            timestamp = time.mktime(date_time.timetuple())
+            achievements += achievementTemplate.fill(achievement_id=achId,timestamp=timestamp)
 
     def write_pdump(char_info):
         startPos = startPosMap[exp][factions[clean(f[5].split("=")[1])]]
@@ -439,9 +451,10 @@ def parse_file(f, exp):
             factions=faction_list,
             text=textIns,
             glyphs=glyphs,
+            achievements=achievements,
         )
 
-        randNo = datetime.now().strftime("%H%M%S")
+        randNo = datetime.datetime.now().strftime("%H%M%S")
 
         with open(char_info["char_name"] + randNo + ".sql", "w") as writer:
             writer.write(result)
@@ -459,4 +472,5 @@ def parse_file(f, exp):
     parse_spells(all_items)
     parse_macros()
     parse_glyphs()
+    parse_achievements()
     write_pdump(char_info)
