@@ -1,10 +1,10 @@
 # WoW-Classic to CMaNGOS Character converter
-Export your 1.13.x and 2.5.x characters to 1.12.x and 2.4.3 respectively.
+Export your 1.13.x, 2.5.x and 3.4.x characters to 1.12.x, 2.4.3 and 3.3.5 respectively.
 
 Specifically it uses the data gathered by a forked variant of the Questionably Epic Gear Exporter to recreate a character from Vanilla/TBC Classic servers on CMaNGOS Servers.
 
 Usage: `python3 main.py exported_character.txt expansion`  
-The `expansion` parameter is optional and can either be `0` for 1.13.x -> 1.12.x or `1`(default) for 2.5.x -> 2.4.3
+The `expansion` parameter is optional and can be `0` for 1.13.x -> 1.12.x or `1`(default) for 2.5.x -> 2.4.3 or `2` for 3.4.x -> 3.3.5
 
 To import the characters into said cmangos server direct access to the server's filesystem is required. So the final integration either needs to be done by the administrator of said cmangos server, or in some automated way.
 
