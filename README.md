@@ -32,3 +32,6 @@ Right now this only works for character-specific macros, not account-wide macros
 If you have ideas for improvements or find bugs, please open an issue, as I'm sure there are some bugs.
 
 Big thanks to https://github.com/slavanorm/ for his major refactor of this script.
+
+# 从魔兽世界经典导出玩家数据并将数据重新导入CMaNGOS的项目
+
