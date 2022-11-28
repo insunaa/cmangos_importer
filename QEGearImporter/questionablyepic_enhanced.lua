@@ -300,6 +300,17 @@ function scanGear()
 		end
 	end
 
+	if (GetExpansionLevel() == 2) then
+		for i=1,GetNumCompanions("CRITTER") do
+			local creatureID, creatureName, creatureSpellID, icon, issummoned = GetCompanionInfo("CRITTER", i);
+			addPrint(creatureSpellID)
+		end
+		for i=1,GetNumCompanions("MOUNT") do
+			local creatureID, creatureName, creatureSpellID, icon, issummoned = GetCompanionInfo("CRITTER", i);
+			addPrint(creatureSpellID)
+		end
+	end
+
 	-- Add Talent spells
 	tab = {}
 	vanTab = {}

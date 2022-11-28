@@ -23,6 +23,8 @@ def parse_file(f, exp):
             char_race=races[char_race],
             char_level=clean(f[4].split("=")[1]),
             char_expansion=clean(f[13].split("=")[1]),
+            char_health=10000,
+            char_power=0,
         )
 
         if len(armor_skill):
@@ -56,8 +58,13 @@ def parse_file(f, exp):
         enchantments = ""
         if exp == 0:
             suffix = 0
-            enchantments = instanceEnchantTemplateVan.fill(main_enchant=enchant, enchant_1=suffixTable[str(suffix)][0], enchant_2 = suffixTable[str(suffix)][0], enchant_3 = suffixTable[str(suffix)][0])
-        else:
+            enchantments = instanceEnchantTemplateVan.fill(
+                main_enchant=enchant,
+                enchant_1=suffixTable[str(suffix)][0],
+                enchant_2 = suffixTable[str(suffix)][0],
+                enchant_3 = suffixTable[str(suffix)][0]
+                )
+        elif exp == 1:
             if "false" not in sockets and "true" in sockets:
                 socketBonus = itemSocketBonusMap[int(item_entry)]
             if str(suffix) not in suffixTable:
@@ -72,14 +79,39 @@ def parse_file(f, exp):
                 enchant_2=suffixTable[str(suffix)][1],
                 enchant_3=suffixTable[str(suffix)][2],
                 )
-        instance_list += instanceTemplate.fill(
-            item_guid=itemguiditr,
-            item_entry=item_entry,
-            item_count=item_count,
-            item_suffix=-suffix,
-            enchantments=enchantments,
-        )
-        itemguiditr += 2
+        elif exp == 2:
+            if "false" not in sockets and "true" in sockets and int(item_entry) in itemSocketBonusMapWotlk:
+                socketBonus = itemSocketBonusMapWotlk[int(item_entry)]
+            if str(suffix) not in suffixTable:
+                suffix = 0
+            enchantments = instanceEnchantTemplateWOTLK.fill(
+                main_enchant=enchant,
+                gem1=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[0].split(":")[0])]],
+                gem2=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[1].split(":")[0])]],
+                gem3=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[2].split(":")[0])]],
+                socket_bonus=socketBonus,
+                enchant_1=suffixTable[str(suffix)][0],
+                enchant_2=suffixTable[str(suffix)][1],
+                enchant_3=suffixTable[str(suffix)][2],
+                )
+        if exp != 2:
+            instance_list += instanceTemplate.fill(
+                item_guid=itemguiditr,
+                item_entry=item_entry,
+                item_count=item_count,
+                item_suffix=-suffix,
+                enchantments=enchantments,
+            )
+            itemguiditr += 2
+        else:
+            instance_list += instanceTemplateWotLK.fill(
+                item_guid=itemguiditr,
+                item_entry=item_entry,
+                item_count=item_count,
+                item_suffix=-suffix,
+                enchantments=enchantments,
+            )
+            itemguiditr += 2
 
     def parse_slots_equipped():
         def parse_slots_base():
@@ -219,7 +251,7 @@ def parse_file(f, exp):
             parse_bag_base()
 
     def parse_spells(all_items):
-        global skills, spells, action_list, faction_list
+        global skills, spells, action_list, faction_list, talents
         if exp > 0 and str(34093) not in all_items["spells"][3]:
             spells += spellTemplate.fill(spell_id=34093)
         for spell in all_items["spells"][3]:
@@ -229,6 +261,18 @@ def parse_file(f, exp):
             if spell == 348704:
                 spell = 31801
             spells += spellTemplate.fill(spell_id=spell)
+            for index in range(len(talentArray)):
+                talent = talentArray[index]
+                if int(talent["r0"]) == spell:
+                    talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=0)
+                elif int(talent["r1"]) == spell:
+                    talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=1)
+                elif int(talent["r2"]) == spell:
+                    talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=2)
+                elif int(talent["r3"]) == spell:
+                    talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=3)
+                elif int(talent["r4"]) == spell:
+                    talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=4)
 
         professions_spells = [
             int(e) for e in all_items["spells"][3] if int(e) in all_prof_skill_ids
@@ -259,11 +303,18 @@ def parse_file(f, exp):
             actiontype = actionInfo[1].split("=")[1]
             actionId = actionInfo[2].split("=")[1].replace("\n", "")
             slot = int(slot) - 1
-            action_list += actionTemplate.fill(
-                slot_id=slot,
-                action_id=actionId,
-                action_type=actionMap[actiontype],
-            )
+            if exp != 2:
+                action_list += actionTemplate.fill(
+                    slot_id=slot,
+                    action_id=actionId,
+                    action_type=actionMap[actiontype],
+                )
+            else:
+                action_list += actionTemplateWotLK.fill(
+                    slot_id=slot,
+                    action_id=actionId,
+                    action_type=actionMap[actiontype],
+                )
 
         for faction in all_items["factions"][3]:
             factionInfo = faction.split(",")
@@ -328,6 +379,7 @@ def parse_file(f, exp):
         version = ""
         charactersRow = ""
         enchantments = ""
+        textIns = ""
         bagId = 23162
         if exp == 0:
             version = "required_z2799_01_characters_account_data"
@@ -350,13 +402,14 @@ def parse_file(f, exp):
                 start_map=startPos[3])
         else:
             version = "required_14061_01_characters_fishingSteps"
-            enchantments = instanceEnchantTemplateTBC.fill(main_enchant=0, gem1=0, gem2=0, gem3=0, socket_bonus=0, enchant_1=0, enchant_2=0, enchant_3=0)
-            charactersRow = charactersTemplateTBC.fill(
+            enchantments = instanceEnchantTemplateWOTLK.fill(main_enchant=0, gem1=0, gem2=0, gem3=0, socket_bonus=0, enchant_1=0, enchant_2=0, enchant_3=0)
+            charactersRow = charactersTemplateWOTLK.fill(
                 **char_info,
                 pos_x=startPos[0],
                 pos_y=startPos[1],
                 pos_z=startPos[2],
                 start_map=startPos[3])
+            textIns=", ''"
 
         result = pdumpTemplate.fill(
             bag_id=bagId,
@@ -372,8 +425,10 @@ def parse_file(f, exp):
             inventory_list=inventory_list,
             pet_list=pet_list,
             spells=spells,
+            talents=talents,
             instance_list=instance_list,
             factions=faction_list,
+            text=textIns,
         )
 
         randNo = datetime.now().strftime("%H%M%S")
