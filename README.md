@@ -19,7 +19,7 @@ Users can then upload their exported character to this FTP directory and from in
 
 The Addon+Importer combo import the following things:
 
-Character Name, Character Race, Character Class, Character Gender, Equipped Gear, All items in bags\*, All learned spells, All learned Talents, All learned Professions+recipes, Actionbar Buttons\*\*, the character's pet\*\*\*
+Character Name, Character Race, Character Class, Character Gender, Equipped Gear, All items in bags\*, All learned spells, All learned Talents, All learned Professions+recipes, Actionbar Buttons\*\*, the character's pet\*\*\*, Glyphs and Achievements
 
 \* Items in the Bank are *not* imported. If you need items from your bank, put them into your inventory before you export.
 
