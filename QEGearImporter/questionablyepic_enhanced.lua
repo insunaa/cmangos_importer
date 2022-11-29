@@ -132,8 +132,8 @@ function scanGear()
 	addPrint("")
 	addPrint("### GEAR FROM BAGS ###")
 
-	for bag=0, NUM_BAG_SLOTS + GetNumBankSlots() do	
-		if GetContainerNumSlots(bag) != 0 then
+	for bag=0, (NUM_BAG_SLOTS + GetNumBankSlots()) do
+		if (GetContainerNumSlots(bag) ~= 0) then
 			for bagSlots=1, GetContainerNumSlots(bag) do
 				--print("Inside the bag this time");
 				local itemID = GetContainerItemID(bag, bagSlots);
