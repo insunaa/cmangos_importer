@@ -132,51 +132,49 @@ function scanGear()
 	addPrint("")
 	addPrint("### GEAR FROM BAGS ###")
 
-	for bag=0, NUM_BAG_SLOTS do	
-		
-		for bagSlots=1, GetContainerNumSlots(bag) do
-			--print("Inside the bag this time");
-			local itemID = GetContainerItemID(bag, bagSlots);
-			
-			if (itemID) then 
-				local itemName, _, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, vendorPrice, classID, subclassID = GetItemInfo(itemID);
+	for bag=0, NUM_BAG_SLOTS + GetNumBankSlots() do	
+		if GetContainerNumSlots(bag) != 0 then
+			for bagSlots=1, GetContainerNumSlots(bag) do
+				--print("Inside the bag this time");
+				local itemID = GetContainerItemID(bag, bagSlots);
 				
-				local itemLink = GetContainerItemLink(bag, bagSlots)
-				local itemSplit = GetItemSplit(itemLink)
-				local suffix = itemSplit[7] * -1
-				local enchantId = itemSplit[2]
-				local gem1 = itemSplit[3]
-				local gem2 = itemSplit[4]
-				local gem3 = itemSplit[5]
-				
-				if (suffix ~= -0) then
-					local unique = bit.band(itemSplit[8], 65535)
-					suffix = ",suffix=" .. suffix .. ",unique=" .. unique
-				else suffix = "" end
-				
-				SocketContainerItem(bag, bagSlots)
-				gemColors = {nil, nil, nil}
-				for j=1, GetNumSockets() do
-					_, _, gemColors[j] = GetExistingSocketInfo(j)
-				end
-				CloseSocketInfo()
-				
-				--if ((classID == 2 or classID == 4) and checkIfUsable(classID, subclassID)) then
-				if (true or classID == 2 or classID == 4) then
-					--addPrint("#")
-					--addPrint("# " .. itemName)
-					--addPrint("# " .. convertSlot(itemEquipLoc) .. "=,id=" .. itemID .. suffix)
-					local _, itemCount = GetContainerItemInfo(bag, bagSlots)
-					--addPrint(itemName)
-					addPrint("id=" .. itemID .. suffix .. ",count=" .. itemCount .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]))
-					--print(itemName .. "(" .. itemType .. ")");
+				if (itemID) then 
+					local itemName, _, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, vendorPrice, classID, subclassID = GetItemInfo(itemID);
 					
+					local itemLink = GetContainerItemLink(bag, bagSlots)
+					local itemSplit = GetItemSplit(itemLink)
+					local suffix = itemSplit[7] * -1
+					local enchantId = itemSplit[2]
+					local gem1 = itemSplit[3]
+					local gem2 = itemSplit[4]
+					local gem3 = itemSplit[5]
+					
+					if (suffix ~= -0) then
+						local unique = bit.band(itemSplit[8], 65535)
+						suffix = ",suffix=" .. suffix .. ",unique=" .. unique
+					else suffix = "" end
+					
+					SocketContainerItem(bag, bagSlots)
+					gemColors = {nil, nil, nil}
+					for j=1, GetNumSockets() do
+						_, _, gemColors[j] = GetExistingSocketInfo(j)
+					end
+					CloseSocketInfo()
+					
+					--if ((classID == 2 or classID == 4) and checkIfUsable(classID, subclassID)) then
+					if (true or classID == 2 or classID == 4) then
+						--addPrint("#")
+						--addPrint("# " .. itemName)
+						--addPrint("# " .. convertSlot(itemEquipLoc) .. "=,id=" .. itemID .. suffix)
+						local _, itemCount = GetContainerItemInfo(bag, bagSlots)
+						--addPrint(itemName)
+						addPrint("id=" .. itemID .. suffix .. ",count=" .. itemCount .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]))
+						--print(itemName .. "(" .. itemType .. ")");
+						
+					end
 				end
 			end
-						
-			--local _, _, itemRarity, _, _, itemType, itemSubType, _, _, _, _ = GetItemInfo()
 		end
-		
 	end
 
 	addPrint("")
