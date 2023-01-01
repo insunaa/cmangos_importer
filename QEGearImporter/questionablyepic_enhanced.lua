@@ -75,7 +75,6 @@ function scanGear()
 		local equipID = GetInventoryItemID("player", i);
 		local itemLink = GetInventoryItemLink('player', i)
 
-			
 		if (equipID ~= nil) then
 			local itemSplit = GetItemSplit(itemLink)
 			local suffix = itemSplit[7] * -1
@@ -83,7 +82,7 @@ function scanGear()
 				local unique = bit.band(itemSplit[8], 65535)
 				suffix = ",suffix=" .. suffix .. ",unique=" .. unique
 			else suffix = "" end
-
+			local hasBuckle = false
 			--local _, enchantId, gem1, gem2, gem3, gem4 = string.match(itemLink, "item:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+)")
 			local enchantId = itemSplit[2]
 			local gem1 = itemSplit[3]
@@ -92,13 +91,19 @@ function scanGear()
 			SocketInventoryItem(i)
 			gemColors = {nil, nil, nil}
 			for j=1, GetNumSockets() do
+				_, _, _, _, _, _, _, _, equipLoc = GetItemInfo(itemLink)
+				if (equipLoc ~= nil and equipLoc == "INVTYPE_WAIST") then
+					if (GetSocketTypes(j) ~= nil and GetSocketTypes(j) == "Prismatic") then
+						hasBuckle = true
+					end
+				end
 				_, _, gemColors[j] = GetExistingSocketInfo(j)
 			end
 			CloseSocketInfo()
 			local itemName, _, _, _, _, _, _, _, _, _, _, classID, subclassID = GetItemInfo(equipID);
 			--print(classID)
 			if (classID == 2 or classID == 4) then
-				addPrint(slotNames[i] .. "=,id=" .. equipID .. suffix .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]))
+				addPrint(slotNames[i] .. "=,id=" .. equipID .. suffix .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]) .. ",buckle=" .. tostring(hasBuckle))
 				--print(itemName .. "(" .. itemType .. ")");
 					
 			end
@@ -106,7 +111,6 @@ function scanGear()
 		
 	end
 	
-
 	local ammoID = GetInventoryItemID("player", 0);
 	if (ammoID ~= nil) then
 		addPrint("ammo=,id=" .. ammoID)
@@ -132,6 +136,15 @@ function scanGear()
 	addPrint("")
 	addPrint("### GEAR FROM BAGS ###")
 
+	if (true) then
+		for i=20, 23, 1  do
+			local equipID = GetInventoryItemID("player", i);
+			if equipID ~= nil then
+				addPrint(i .. "," .. equipID)
+			end
+		end
+	end
+
 	for bag=0, (NUM_BAG_SLOTS + GetNumBankSlots()) do
 		if (GetContainerNumSlots(bag) ~= 0) then
 			for bagSlots=1, GetContainerNumSlots(bag) do
@@ -144,6 +157,7 @@ function scanGear()
 					local itemLink = GetContainerItemLink(bag, bagSlots)
 					local itemSplit = GetItemSplit(itemLink)
 					local suffix = itemSplit[7] * -1
+					local hasBuckle = false
 					local enchantId = itemSplit[2]
 					local gem1 = itemSplit[3]
 					local gem2 = itemSplit[4]
@@ -157,6 +171,12 @@ function scanGear()
 					SocketContainerItem(bag, bagSlots)
 					gemColors = {nil, nil, nil}
 					for j=1, GetNumSockets() do
+						_, _, _, _, _, _, _, _, equipLoc = GetItemInfo(itemLink)
+						if (equipLoc ~= nil and equipLoc == "INVTYPE_WAIST") then
+							if (GetSocketTypes(j) ~= nil and GetSocketTypes(j) == "Prismatic") then
+								hasBuckle = true
+							end
+						end
 						_, _, gemColors[j] = GetExistingSocketInfo(j)
 					end
 					CloseSocketInfo()
@@ -168,7 +188,11 @@ function scanGear()
 						--addPrint("# " .. convertSlot(itemEquipLoc) .. "=,id=" .. itemID .. suffix)
 						local _, itemCount = GetContainerItemInfo(bag, bagSlots)
 						--addPrint(itemName)
-						addPrint("id=" .. itemID .. suffix .. ",count=" .. itemCount .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]))
+						if (true) then
+							addPrint("bag=" .. bag .. ",slot=" .. bagSlots ..",id=" .. itemID .. suffix .. ",count=" .. itemCount .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]) .. ",buckle=" .. tostring(hasBuckle))
+						else
+							addPrint("id=" .. itemID .. suffix .. ",count=" .. itemCount .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]) .. ",buckle=" .. tostring(hasBuckle))
+						end
 						--print(itemName .. "(" .. itemType .. ")");
 						
 					end

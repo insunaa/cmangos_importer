@@ -46,15 +46,39 @@ def parse_file(f, exp):
 
         return result
 
-    def add_to_itemlists(slot_id, item_entry, suffix, enchant, gems, bag_id=0, item_count=1):
+    def add_to_itemlists(slot_id, item_entry, suffix, enchant, gems, buckle, bag_id="0", item_count=1, bagno=5, worn=False):
         global inventory_list, instance_list, itemguiditr
+        bagMap = {"0":0, "1":10036, "2":10038, "3":10040, "4":10042}
+        slot_id = int(slot_id)
         socketBonus = 0
-        inventory_list += wornTemplate.fill(
-            slot_id=slot_id,
-            item_guid=itemguiditr,
-            item_entry=item_entry,
-            bag_id=bag_id,
-        )
+        if bag_id != "0" and bagno>3 and not worn:
+            inventory_list += wornTemplate.fill(
+                slot_id=slot_id,
+                item_guid=itemguiditr,
+                item_entry=item_entry,
+                bag_id = bagMap[bag_id],
+            )
+        elif bag_id=="0" and bagno <= 3 and worn:
+            inventory_list += wornTemplate.fill(
+                slot_id=slot_id - 1,
+                item_guid=itemguiditr,
+                item_entry=item_entry,
+                bag_id=bag_id,
+            )
+        elif bag_id=="0" and bagno > 3 and not worn:
+            inventory_list += wornTemplate.fill(
+                slot_id=((slot_id - 1) + 23),
+                item_guid=itemguiditr,
+                item_entry=item_entry,
+                bag_id=bag_id,
+            )
+        else:
+            inventory_list += wornTemplate.fill(
+                slot_id=slot_id,
+                item_guid=itemguiditr,
+                item_entry=item_entry,
+                bag_id=bag_id,
+                )
         sockets = [gems[0].split(":")[1], gems[1].split(":")[1], gems[2].split(":")[1]]
         suffix = abs(int(suffix))
         enchantments = ""
@@ -86,26 +110,33 @@ def parse_file(f, exp):
                 socketBonus = itemSocketBonusMapWotlk[int(item_entry)]
             if str(suffix) not in suffixTable:
                 suffix = 0
-            enchantments = instanceEnchantTemplateWOTLK.fill(
-                main_enchant=enchant,
-                gem1=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[0].split(":")[0])]],
-                gem2=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[1].split(":")[0])]],
-                gem3=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[2].split(":")[0])]],
-                socket_bonus=socketBonus,
-                enchant_1=suffixTable[str(suffix)][0],
-                enchant_2=suffixTable[str(suffix)][1],
-                enchant_3=suffixTable[str(suffix)][2],
-                )
-        if exp != 2:
-            instance_list += instanceTemplate.fill(
-                item_guid=itemguiditr,
-                item_entry=item_entry,
-                item_count=item_count,
-                item_suffix=-suffix,
-                enchantments=enchantments,
-            )
-            itemguiditr += 2
-        else:
+            if buckle == "false":
+                enchantments = instanceEnchantTemplateWOTLK.fill(
+                    main_enchant=enchant,
+                    gem1=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[0].split(":")[0])]],
+                    gem2=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[1].split(":")[0])]],
+                    gem3=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[2].split(":")[0])]],
+                    socket_bonus=socketBonus,
+                    enchant_1=suffixTable[str(suffix)][0],
+                    enchant_2=suffixTable[str(suffix)][1],
+                    enchant_3=suffixTable[str(suffix)][2],
+                    )
+            else:
+                enchantments = instanceEnchantTemplateWOTLK.fill(
+                    main_enchant=enchant,
+                    gem1=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[0].split(":")[0])]],
+                    gem2=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[1].split(":")[0])]],
+                    gem3=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[2].split(":")[0])]],
+                    socket_bonus=socketBonus,
+                    enchant_1=3729,
+                    enchant_2=suffixTable[str(suffix)][1],
+                    enchant_3=suffixTable[str(suffix)][2],
+                    )
+        if exp == 0:
+            pass
+        elif exp == 1:
+            pass
+        elif exp == 2:
             instance_list += instanceTemplateWotLK.fill(
                 item_guid=itemguiditr,
                 item_entry=item_entry,
@@ -113,7 +144,7 @@ def parse_file(f, exp):
                 item_suffix=-suffix,
                 enchantments=enchantments,
             )
-            itemguiditr += 2
+        itemguiditr += 2
 
     def parse_slots_equipped():
         def parse_slots_base():
@@ -121,18 +152,21 @@ def parse_file(f, exp):
             suffix = "0"
             enchant = "0"
             gems = []
-            if len(item_info) == 8:
+            buckle = "false"
+            if len(item_info) == 9:
                 suffix = item_info[2].split("=")[1]
                 enchant = item_info[4].split("=")[1]
                 gems = [item_info[5].split("=")[1], item_info[6].split("=")[1], item_info[7].split("=")[1]]
-            elif len(item_info) == 6:
+                buckle = [item_info[8].split("=")[1]]
+            elif len(item_info) == 7:
                 enchant = item_info[2].split("=")[1]
                 gems = [item_info[3].split("=")[1], item_info[4].split("=")[1], item_info[5].split("=")[1]]
+                buckle = [item_info[6].split("=")[1]]
 
             item_entry = (
                 f[i + equip_offset].split("=")[2].split(",")[0].replace("\n", "")
             )
-            add_to_itemlists(slotMap[slot], item_entry, suffix, enchant, gems)
+            add_to_itemlists(slotMap[slot], item_entry, suffix, enchant, gems, buckle[0].rstrip(), worn=True)
 
         slots = [
             "head",
@@ -223,34 +257,42 @@ def parse_file(f, exp):
 
     def parse_bag(all_items):
         def parse_bag_base():
-            nonlocal firstSlot, bagID
+#            nonlocal firstSlot, bagID
             suffix = "0"
             enchant = "0"
             gems = []
+            buckle = "false"
             item_data = item.split(",")
             item_count = ""
-            item_entry = item_data[0].split("=")
+            item_entry = item_data[2].split("=")
             if len(item_entry) > 1:
                 item_entry = item_entry[1]
             if len(item_data) > 1:
-                item_count = clean(item_data[1].split("=")[1])
-            if len(item_data) == 8:
                 item_count = clean(item_data[3].split("=")[1])
-                suffix = item_data[1].split("=")[1]
+            if len(item_data) == 11:
+                item_count = clean(item_data[5].split("=")[1])
+                suffix = item_data[3].split("=")[1]
+                enchant = item_data[6].split("=")[1]
+                gems = [item_data[7].split("=")[1], item_data[8].split("=")[1], item_data[9].split("=")[1]]
+                buckle = [item_data[10].split("=")[1]]
+            if len(item_data) == 9:
                 enchant = item_data[4].split("=")[1]
                 gems = [item_data[5].split("=")[1], item_data[6].split("=")[1], item_data[7].split("=")[1]]
-            if len(item_data) == 6:
-                enchant = item_data[2].split("=")[1]
-                gems = [item_data[3].split("=")[1], item_data[4].split("=")[1], item_data[5].split("=")[1]]
-            slotID = firstSlot % 28
-            bagID = int(firstSlot / 28) + 216
-            add_to_itemlists(slotID, item_entry, suffix, enchant, gems, bagID, item_count=item_count)
-            firstSlot += 1
+                buckle = [item_data[8].split("=")[1]]
+            slotID = str(int(item_data[1].split("=")[1]) - 1)
+            bagID = item_data[0].split("=")[1]
+            add_to_itemlists(slotID, item_entry, suffix, enchant, gems, buckle[0], bagID, item_count=item_count)
+#            firstSlot += 1
 
-        firstSlot = 23 + 14
-        bagID = 1
+#        firstSlot = 23 + 14
+#        bagID = 1
         for item in all_items["gear"][3]:
-            parse_bag_base()
+            if "=" not in item and "," in item:
+                slot = int(item.split(",")[0]) - 1
+                iid = item.split(",")[1]
+                add_to_itemlists(slot, iid, suffix=0, enchant=0, bag_id=0, gems=["0:nil", "0:nil", "0:nil"], buckle="false", bagno=0)
+            else:
+                parse_bag_base()
 
     def parse_spells(all_items):
         global skills, spells, action_list, faction_list, talents
@@ -387,13 +429,14 @@ def parse_file(f, exp):
     def parse_achievements():
         global achievements
         for achievement in all_items["achievements"][3]:
-            achId = achievement.split(",")[0]
-            year = int(achievement.split(",")[1])
-            month = int(achievement.split(",")[2])
-            day = int(achievement.split(",")[3])
-            date_time = datetime.datetime(year+2000, month, day, 0, 0)
-            timestamp = time.mktime(date_time.timetuple())
-            achievements += achievementTemplate.fill(achievement_id=achId,timestamp=timestamp)
+            if "," in achievement:
+                achId = achievement.split(",")[0]
+                year = int(achievement.split(",")[1])
+                month = int(achievement.split(",")[2])
+                day = int(achievement.split(",")[3])
+                date_time = datetime.datetime(year+2000, month, day, 0, 0)
+                timestamp = time.mktime(date_time.timetuple())
+                achievements += achievementTemplate.fill(achievement_id=achId,timestamp=timestamp)
 
     def write_pdump(char_info):
         startPos = startPosMap[exp][factions[clean(f[5].split("=")[1])]]
