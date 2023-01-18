@@ -1,6 +1,3 @@
-
-
-
 qeVersionNum = "1.3"
 QEProfile = ""
 
@@ -101,11 +98,8 @@ function scanGear()
 			end
 			CloseSocketInfo()
 			local itemName, _, _, _, _, _, _, _, _, _, _, classID, subclassID = GetItemInfo(equipID);
-			--print(classID)
 			if (classID == 2 or classID == 4) then
 				addPrint(slotNames[i] .. "=,id=" .. equipID .. suffix .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]) .. ",buckle=" .. tostring(hasBuckle))
-				--print(itemName .. "(" .. itemType .. ")");
-					
 			end
 		end
 		
@@ -146,15 +140,14 @@ function scanGear()
 	end
 
 	for bag=0, (NUM_BAG_SLOTS + GetNumBankSlots()) do
-		if (GetContainerNumSlots(bag) ~= 0) then
-			for bagSlots=1, GetContainerNumSlots(bag) do
-				--print("Inside the bag this time");
-				local itemID = GetContainerItemID(bag, bagSlots);
+		if (C_Container.GetContainerNumSlots(bag) ~= 0) then
+			for bagSlots=1, C_Container.GetContainerNumSlots(bag) do
+				local itemID = C_Container.GetContainerItemID(bag, bagSlots);
 				
 				if (itemID) then 
 					local itemName, _, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, vendorPrice, classID, subclassID = GetItemInfo(itemID);
 					
-					local itemLink = GetContainerItemLink(bag, bagSlots)
+					local itemLink = C_Container.GetContainerItemLink(bag, bagSlots)
 					local itemSplit = GetItemSplit(itemLink)
 					local suffix = itemSplit[7] * -1
 					local hasBuckle = false
@@ -168,7 +161,7 @@ function scanGear()
 						suffix = ",suffix=" .. suffix .. ",unique=" .. unique
 					else suffix = "" end
 					
-					SocketContainerItem(bag, bagSlots)
+					C_Container.SocketContainerItem(bag, bagSlots)
 					gemColors = {nil, nil, nil}
 					for j=1, GetNumSockets() do
 						_, _, _, _, _, _, _, _, equipLoc = GetItemInfo(itemLink)
@@ -181,21 +174,8 @@ function scanGear()
 					end
 					CloseSocketInfo()
 					
-					--if ((classID == 2 or classID == 4) and checkIfUsable(classID, subclassID)) then
-					if (true or classID == 2 or classID == 4) then
-						--addPrint("#")
-						--addPrint("# " .. itemName)
-						--addPrint("# " .. convertSlot(itemEquipLoc) .. "=,id=" .. itemID .. suffix)
-						local _, itemCount = GetContainerItemInfo(bag, bagSlots)
-						--addPrint(itemName)
-						if (true) then
-							addPrint("bag=" .. bag .. ",slot=" .. bagSlots ..",id=" .. itemID .. suffix .. ",count=" .. itemCount .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]) .. ",buckle=" .. tostring(hasBuckle))
-						else
-							addPrint("id=" .. itemID .. suffix .. ",count=" .. itemCount .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]) .. ",buckle=" .. tostring(hasBuckle))
-						end
-						--print(itemName .. "(" .. itemType .. ")");
-						
-					end
+					local itemCount = C_Container.GetContainerItemInfo(bag, bagSlots)["stackCount"]
+					addPrint("bag=" .. bag .. ",slot=" .. bagSlots ..",id=" .. itemID .. suffix .. ",count=" .. itemCount .. ",enchantId=" .. enchantId .. ",gem1=" .. gem1 ..":" .. tostring(gemColors[1]) .. ",gem2=" .. gem2 ..":" .. tostring(gemColors[2]) .. ",gem3=" .. gem3 ..":" .. tostring(gemColors[3]) .. ",buckle=" .. tostring(hasBuckle))
 				end
 			end
 		end
@@ -512,20 +492,6 @@ function scanGear()
 	
 	addPrint("")
 	addPrint("### EOF ###")
-
-	-- show the appropriate frames
-	
-	--SimcCopyFrame:Show()
-	--SimcCopyFrameScroll:Show()
-	--SimcCopyFrameScrollText:Show()
-	--SimcCopyFrameScrollText:SetText(QEProfile)
-	--SimcCopyFrameScrollText:HighlightText()
-	--SimcCopyFrameScrollText:SetScript("OnEscapePressed", function(self)
-    --SimcCopyFrame:Hide()
-  --end)
-	--SimcCopyFrameButton:SetScript("OnClick", function(self)
-    --SimcCopyFrame:Hide()
-  --end)
   
   local f = GetMainFrame(QEProfile)
   f:Show()
@@ -657,64 +623,6 @@ function convertSlot(raw)
 	elseif (raw == "INVTYPE_RELIC") then return "relic" 
 	else return "unknown" end
 end
-
-function checkIfUsable(classID, subclassID) 
-	_, pclass = UnitClass("player")
-	
-	--armorTypes = {
-	--	["Priest"] = [0, 1],
-	--	["Druid"] = [0, 1, 2, 8],
-	--	["Shaman"] = [0, 1, 2, 3, 6, 9],
-	--	["Paladin"] = [0, 1, 2, 3, 4, 6, 7]
-	--}
-		
-	classArmor = {
-		["Priest"] = 1,
-		["Mage"] = 1,
-		["Warlock"] = 1,
-		["Rogue"] = 2,
-		["Druid"] = 2,
-		["Shaman"] = 3,
-		["Hunter"] = 3,
-		["Paladin"] = 4,
-		["Warrior"] = 4
-	}
-	
-	classWeps = {
-		["Rogue"] = "OneHanded Axes, OneHanded Daggers, OneHanded Maces",
-		["Druid"] = "OneHanded Maces, TwoHanded Maces, Staves, Fist Weapons, OneHanded Dagger",
-		["Paladin"] = "OneHanded Maces, TwoHanded Maces, OneHanded Axes, TwoHanded Axes, OneHandedSwords, TwoHandedSwords, Polearms",
-		["Priest"] = "OneHanded Maces, OneHanded Daggers, Staves",
-		["Mage"] = "OneHanded Dagger, OneHanded Sword, Staves, Wands",
-		["Warlock"] = "",
-		["Shaman"] = "",
-		["Hunter"] = "",
-		["Warrior"] = ""
-	}
-		
-		
-	--print(itemType .. "/" .. pclass .. "/" .. armorTypes[subType] .. "/" .. classArmor[pclass]) 
-	--print(itemType)
-	--print(subType)
-	--print(armorTypes[subType])
-	
-	if (classID == 4) then
-	
-		armorType = armorTypes[pclass]
-		--classType = classArmor[pclass]
-		
-		return armorType
-		
-	elseif (classID == 2) then
-	
-		stype = subType:gsub('%-', '')
-		--print(string.find(classWeps[pclass], stype))
-	
-		return string.find(classWeps[pclass], stype)
-	
-	end
-end
-
 
 SLASH_QE1 = "/qe";
 SlashCmdList["QE"] = scanGear;
