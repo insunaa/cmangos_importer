@@ -110,7 +110,7 @@ function scanGear()
 		addPrint("ammo=,id=" .. ammoID)
 	end
 	if (pclass == "hunter") then
-		local invID = ContainerIDToInventoryID(4)
+		local invID = C_Container.ContainerIDToInventoryID(4)
 		local bagLink = GetInventoryItemLink("player", invID)
 		local bagSplit = GetItemSplit(bagLink)
 		addPrint("quiver=,id=" .. bagSplit[1])
@@ -131,8 +131,9 @@ function scanGear()
 	addPrint("### GEAR FROM BAGS ###")
 
 	if (true) then
-		for i=20, 23, 1  do
-			local equipID = GetInventoryItemID("player", i);
+		--for i=20, 23, 1  do
+		for i=1, 4, 1 do
+			local equipID = GetInventoryItemID("player", C_Container.ContainerIDToInventoryID(i));
 			if equipID ~= nil then
 				addPrint(i .. "," .. equipID)
 			end
