@@ -48,7 +48,7 @@ def parse_file(f, exp):
 
     def add_to_itemlists(slot_id, item_entry, suffix, enchant, gems, buckle, bag_id="0", item_count=1, bagno=5, worn=False):
         global inventory_list, instance_list, itemguiditr
-        bagMap = {"0":0, "1":10036, "2":10038, "3":10040, "4":10042}
+        bagMap = {"0":0, "1":10034, "2":10036, "3":10038, "4":10040}
         slot_id = int(slot_id)
         socketBonus = 0
         if bag_id != "0" and bagno>3 and not worn:
@@ -281,6 +281,8 @@ def parse_file(f, exp):
                 buckle = [item_data[8].split("=")[1]]
             slotID = str(int(item_data[1].split("=")[1]) - 1)
             bagID = item_data[0].split("=")[1]
+            if int(bagID) == 0:
+                str(int(slotID) + 1)
             add_to_itemlists(slotID, item_entry, suffix, enchant, gems, buckle[0], bagID, item_count=item_count)
 #            firstSlot += 1
 
@@ -288,8 +290,8 @@ def parse_file(f, exp):
 #        bagID = 1
         for item in all_items["gear"][3]:
             if "=" not in item and "," in item:
-                slot = int(item.split(",")[0]) - 1
-                iid = item.split(",")[1]
+                slot = int(item.split(",")[0]) + 18
+                iid = int(item.split(",")[1])
                 add_to_itemlists(slot, iid, suffix=0, enchant=0, bag_id=0, gems=["0:nil", "0:nil", "0:nil"], buckle="false", bagno=0)
             else:
                 parse_bag_base()
