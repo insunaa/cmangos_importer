@@ -4,7 +4,7 @@ import sys
 import os.path
 from src.parser import parse_file
 
-expansion = 1
+expansion = 2
 
 if sys.stdin and sys.stdin.isatty():
     # check if ran from cli
