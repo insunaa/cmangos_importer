@@ -48,7 +48,7 @@ def parse_file(f, exp):
 
     def add_to_itemlists(slot_id, item_entry, suffix, enchant, gems, buckle, bag_id="0", item_count=1, bagno=5, worn=False):
         global inventory_list, instance_list, itemguiditr
-        bagMap = {"0":0, "1":10034, "2":10036, "3":10038, "4":10040}
+        bagMap = {"0":0, "1":10036, "2":10038, "3":10040, "4":10042}
         slot_id = int(slot_id)
         socketBonus = 0
         if bag_id != "0" and bagno>3 and not worn:
