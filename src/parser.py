@@ -214,16 +214,28 @@ def parse_file(f, exp):
                     modelId = genericPetModelMap[petFamily]
                     petHealth = clean(petInfo[4].split("=")[1])
                     petPower = clean(petInfo[5].split("=")[1])
-                pet_list = petTemplate.fill(
-                    no_char_guid=True,
-                    pet_entry=petEntry,
-                    pet_owner=char_guid,
-                    pet_name=petName,
-                    pet_level=petLevel,
-                    pet_model=modelId,
-                    pet_health=petHealth,
-                    pet_resource=petPower,
-                )
+                if exp < 2:
+                    pet_list = petTemplate.fill(
+                        no_char_guid=True,
+                        pet_entry=petEntry,
+                        pet_owner=char_guid,
+                        pet_name=petName,
+                        pet_level=petLevel,
+                        pet_model=modelId,
+                        pet_health=petHealth,
+                        pet_resource=petPower,
+                    )
+                else:
+                    pet_list = petTemplateWotLK.fill(
+                        no_char_guid=True,
+                        pet_entry=petEntry,
+                        pet_owner=char_guid,
+                        pet_name=petName,
+                        pet_level=petLevel,
+                        pet_model=modelId,
+                        pet_health=petHealth,
+                        pet_resource=petPower,
+                    )
                 break
 
     def get_all_items():
