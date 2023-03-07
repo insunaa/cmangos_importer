@@ -24,5 +24,5 @@ else:
 
 
 if os.path.isfile(filepath):
-    with open(filepath) as file:
+    with open(filepath, encoding='utf8') as file:
         parse_file(file.readlines(), expansion)
