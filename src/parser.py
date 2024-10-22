@@ -46,11 +46,9 @@ def parse_file(f, exp):
 
         return result
 
-    def add_to_itemlists(slot_id, item_entry, suffix, enchant, gems, buckle, bag_id="0", item_count=1, bagno=5, worn=False):
+    def add_to_itemlists(slot_id, item_entry, suffix, enchant, gems, buckle, bag_id="0", item_count=1, bagno=5, worn=False, bag_offset=0):
         global inventory_list, instance_list, itemguiditr
-        bagMap = {"0":0, "1":10034, "2":10036, "3":10038, "4":10040}
-        if exp == 0:
-            bagMap = {"0":0, "1":10030, "2":10032, "3":10034, "4":10036}
+        bagMap = {"0":0, "1":10000 + ((bag_offset + 0) * 2), "2":10000 + ((bag_offset + 1) * 2), "3":10000 + ((bag_offset + 2) * 2), "4":10000 + ((bag_offset + 3) * 2)}
         slot_id = int(slot_id)
         socketBonus = 0
         if bag_id != "0" and bagno>3 and not worn:
@@ -276,7 +274,7 @@ def parse_file(f, exp):
         return all_items
 
     def parse_bag(all_items):
-        def parse_bag_base():
+        def parse_bag_base(bag_offset):
 #            nonlocal firstSlot, bagID
             suffix = "0"
             enchant = "0"
@@ -303,18 +301,43 @@ def parse_file(f, exp):
             bagID = item_data[0].split("=")[1]
             if int(bagID) == 0:
                 str(int(slotID) + 1)
-            add_to_itemlists(slotID, item_entry, suffix, enchant, gems, buckle[0], bagID, item_count=item_count)
+            add_to_itemlists(slotID, item_entry, suffix, enchant, gems, buckle[0], bagID, item_count=item_count, bag_offset=bag_offset)
 #            firstSlot += 1
 
 #        firstSlot = 23 + 14
 #        bagID = 1
+        slots = [
+            "head",
+            "neck",
+            "shoulder",
+            "chest",
+            "waist",
+            "legs",
+            "feet",
+            "wrist",
+            "hands",
+            "finger1",
+            "finger2",
+            "trinket1",
+            "trinket2",
+            "back",
+            "main_hand",
+            "off_hand",
+            "relic",
+            "tabard",
+        ]
+        bag_offset = 0
+        for slot in slots:
+            for i in range(19):
+                if slot in (f[i + equip_offset]):
+                    bag_offset += 1
         for item in all_items["gear"][3]:
             if "=" not in item and "," in item:
                 slot = int(item.split(",")[0]) + 18
                 iid = int(item.split(",")[1])
                 add_to_itemlists(slot, iid, suffix=0, enchant=0, bag_id=0, gems=["0:nil", "0:nil", "0:nil"], buckle="false", bagno=0)
             else:
-                parse_bag_base()
+                parse_bag_base(bag_offset)
 
     def parse_spells(all_items):
         global skills, spells, action_list, faction_list, talents
