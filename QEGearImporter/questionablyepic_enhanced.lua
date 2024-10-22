@@ -566,7 +566,6 @@ function GetMainFrame(text)
 
     -- resizing
     f:SetResizable(true)
-    f:SetMinResize(150, 100)
     local rb = CreateFrame("Button", "SimcResizeButton", f)
     rb:SetPoint("BOTTOMRIGHT", -6, 7)
     rb:SetSize(16, 16)
@@ -600,7 +599,9 @@ end
 
 function addPrint(line)
 	--print(line)
-	QEProfile = QEProfile .. line .. "\n";
+	if line ~= nil then
+		QEProfile = QEProfile .. line .. "\n";
+	end
 end
 
 function convertSlot(raw)
