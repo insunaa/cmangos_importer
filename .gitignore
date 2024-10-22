@@ -1,0 +1,6 @@
+*.txt
+*.sql
+*.json
+*.csv
+*.zip
+src/__pycache__

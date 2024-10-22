@@ -48,7 +48,9 @@ def parse_file(f, exp):
 
     def add_to_itemlists(slot_id, item_entry, suffix, enchant, gems, buckle, bag_id="0", item_count=1, bagno=5, worn=False):
         global inventory_list, instance_list, itemguiditr
-        bagMap = {"0":0, "1":10036, "2":10038, "3":10040, "4":10042}
+        bagMap = {"0":0, "1":10034, "2":10036, "3":10038, "4":10040}
+        if exp == 0:
+            bagMap = {"0":0, "1":10030, "2":10032, "3":10034, "4":10036}
         slot_id = int(slot_id)
         socketBonus = 0
         if bag_id != "0" and bagno>3 and not worn:
@@ -133,7 +135,13 @@ def parse_file(f, exp):
                     enchant_3=suffixTable[str(suffix)][2],
                     )
         if exp == 0:
-            pass
+            instance_list += instanceTemplate.fill(
+                item_guid=itemguiditr,
+                item_entry=item_entry,
+                item_count=item_count,
+                item_suffix=-suffix,
+                enchantments=enchantments,
+            )
         elif exp == 1:
             pass
         elif exp == 2:
@@ -310,6 +318,7 @@ def parse_file(f, exp):
 
     def parse_spells(all_items):
         global skills, spells, action_list, faction_list, talents
+        spellList = []
         if exp > 0 and str(34093) not in all_items["spells"][3]:
             spells += spellTemplate.fill(spell_id=34093)
         for spell in all_items["spells"][3]:
@@ -318,19 +327,37 @@ def parse_file(f, exp):
                 spell = 31892
             if spell == 348704:
                 spell = 31801
+            if spell in spellList:
+                continue
+            if exp == 0 and spell in ridingSpellMap:
+                riding_skill = 75
+                riding_spell = 33388
+                if char_info["char_level"] == 60:
+                    riding_skill = 150
+                    riding_spell = 33391
+                skills += skillsTemplate.fill(
+                    skill_id=ridingSpellMap[spell],
+                    current_skill=riding_skill,
+                    max_skill=riding_skill,
+                )
+                if riding_spell not in spellList:
+                    spells += spellTemplate.fill(spell_id=riding_spell)
+                    spellList.append(riding_spell)
+            spellList.append(spell)
             spells += spellTemplate.fill(spell_id=spell)
-            for index in range(len(talentArray)):
-                talent = talentArray[index]
-                if int(talent["r0"]) == spell:
-                    talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=0)
-                elif int(talent["r1"]) == spell:
-                    talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=1)
-                elif int(talent["r2"]) == spell:
-                    talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=2)
-                elif int(talent["r3"]) == spell:
-                    talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=3)
-                elif int(talent["r4"]) == spell:
-                    talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=4)
+            if exp > 1:
+                for index in range(len(talentArray)):
+                    talent = talentArray[index]
+                    if int(talent["r0"]) == spell:
+                        talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=0)
+                    elif int(talent["r1"]) == spell:
+                        talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=1)
+                    elif int(talent["r2"]) == spell:
+                        talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=2)
+                    elif int(talent["r3"]) == spell:
+                        talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=3)
+                    elif int(talent["r4"]) == spell:
+                        talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=4)
 
         professions_spells = [
             int(e) for e in all_items["spells"][3] if int(e) in all_prof_skill_ids
@@ -460,7 +487,7 @@ def parse_file(f, exp):
         textIns = ""
         bagId = 23162
         if exp == 0:
-            version = "required_z2799_01_characters_account_data"
+            version = "required_z2819_01_characters_item_instance_text_id_fix"
             enchantments = instanceEnchantTemplateVan.fill(main_enchant=0, enchant_1=0, enchant_2=0, enchant_3=0)
             bagId = 14156
             charactersRow = charactersTemplateVan.fill(
