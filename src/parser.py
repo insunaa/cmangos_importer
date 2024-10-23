@@ -14,9 +14,10 @@ def parse_file(f, exp):
     for slot in slots:
         slotCache[slot] = 0
     def get_char_info():
-        global skills
+        global skills, class_name
         char = f[3].split("=")
         char_class = char[0]
+        class_name = char_class
         char_race = clean(f[5].split("=")[1])
         armor_skill = skillmap[char_class]["armor"]
         weapon_skills = skillmap[char_class]["weapons"]
@@ -27,6 +28,7 @@ def parse_file(f, exp):
             char_class=classes[char_class],
             char_race=races[char_race],
             char_level=clean(f[4].split("=")[1]),
+            char_money=clean(f[14].split("=")[1]),
             char_expansion=clean(f[13].split("=")[1]),
             char_health=10000,
             char_power=0,
@@ -237,7 +239,8 @@ def parse_file(f, exp):
             spells=["SPELLS", 0, 0, []],
             factions=["FACTIONS", 0, 0, []],
             glyphs=["GLYPHS", 0, 0, []],
-            achievements=["ACHIEVEMENTS", 0, len(f), []],
+            achievements=["ACHIEVEMENTS", 0, 0, []],
+            cskills=["SKILLS", 0, len(f), []],
         )
         previous_k = ""
         for k, v in all_items.items():
@@ -465,6 +468,25 @@ def parse_file(f, exp):
                 timestamp = time.mktime(date_time.timetuple())
                 achievements += achievementTemplate.fill(achievement_id=achId,timestamp=timestamp)
 
+    def parse_skills():
+        global cskills
+        for skill in all_items["cskills"][3]:
+            splits = skill.split(";")
+            skillName = splits[0]
+            skillRank = int(splits[1])
+            maxRank = int(splits[1])
+            skill_id = 0
+            if skillName in duplicateSkills:
+                skill_id = duplicateSkills[skillName][class_name]
+            else:
+                skill_id = vanillaEnSkillMap[skillName]
+            cskills += skillsTemplate.fill(
+                skill_id=skill_id,
+                current_skill=skillRank,
+                max_skill=maxRank,
+            )
+
+
     def write_pdump(char_info):
         startPos = startPosMap[exp][factions[clean(f[5].split("=")[1])]]
         version = ""
@@ -513,7 +535,7 @@ def parse_file(f, exp):
             pos_y=startPos[1],
             pos_z=startPos[2],
             start_map=startPos[3],
-            skills=skills,
+            skills=cskills,
             actions=action_list,
             inventory_list=inventory_list,
             pet_list=pet_list,
@@ -545,4 +567,5 @@ def parse_file(f, exp):
     parse_macros()
     parse_glyphs()
     parse_achievements()
+    parse_skills()
     write_pdump(char_info)

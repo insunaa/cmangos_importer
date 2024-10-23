@@ -23,12 +23,14 @@ action_list = ""
 faction_list = ""
 macro_list = ""
 skills = ""
+cskills = ""
 spells = ""
 talents = ""
 glyphs = ""
 achievements = ""
 inventory_list = ""
 instance_list = ""
+class_name = ""
 itemguiditr = 10000
 char_guid = 500
 equip_offset = 15
@@ -95,6 +97,138 @@ slots = [
 
 maxSkillMap = {
     "professions": {0: 300, 1:375, 2:450}
+}
+
+vanillaEnSkillMap = {
+    "Frost": 6,
+    "Fire": 8,
+    "Arms": 6,
+    "Combat": 38,
+    "Subtlety": 39,
+    "Poisons": 40,
+    "Swords": 43,
+    "Axes": 44,
+    "Bows": 45,
+    "Guns": 46,
+    "Beast Mastery": 50,
+    "Survival": 51,
+    "Maces": 54,
+    "Two-Handed Swords": 55,
+    "Holy": 56,
+    "Shadow Magic": 78,
+    "Defense": 95,
+    "Language: Common": 98,
+    "Dwarven Racial": 101,
+    "Language: Orcish": 109,
+    "Language: Dwarven": 111,
+    "Language: Darnassian": 113,
+    "Language: Taurahe": 115,
+    "Dual Wield": 118,
+    "Tauren Racial": 124,
+    "Orc Racial": 125,
+    "Night Elf Racial": 126,
+    "First Aid": 129,
+    "Feral Combat": 134,
+    "Staves": 136,
+    "Language: Thalassian": 137,
+    "Language: Draconic": 138,
+    "Language: Demon Tongue": 139,
+    "Language: Titan": 140,
+    "Language: Old Tongue": 141,
+    #"Survival": 142,
+    "Horse Riding": 148,
+    "Wolf Riding": 149,
+    "Tiger Riding": 150,
+    "Ram Riding": 152,
+    "Swimming": 155,
+    "Two-Handed Maces": 160,
+    "Unarmed": 162,
+    "Marksmanship": 163,
+    "Blacksmithing": 164,
+    "Leatherworking": 165,
+    "Alchemy": 171,
+    "Two-Handed Axes": 172,
+    "Daggers": 173,
+    "Thrown": 176,
+    "Herbalism": 182,
+    "GENERIC (DND)": 183,
+    "Retribution": 184,
+    "Cooking": 185,
+    "Mining": 186,
+    "Pet - Imp": 188,
+    "Pet - Felhunter": 189,
+    "Tailoring": 197,
+    "Engineering": 202,
+    "Pet - Spider": 203,
+    "Pet - Voidwalker": 204,
+    "Pet - Succubus": 205,
+    "Pet - Infernal": 206,
+    "Pet - Doomguard": 207,
+    "Pet - Wolf": 208,
+    "Pet - Cat": 209,
+    "Pet - Bear": 210,
+    "Pet - Boar": 211,
+    "Pet - Crocilisk": 212,
+    "Pet - Carrion Bird": 213,
+    "Pet - Crab": 214,
+    "Pet - Gorilla": 215,
+    "Pet - Raptor": 217,
+    "Pet - Tallstrider": 218,
+    "Racial - Undead": 220,
+    "Crossbows": 226,
+    "Wands": 228,
+    "Polearms": 229,
+    "Pet - Scorpid": 236,
+    "Arcane": 237,
+    "Pet - Turtle": 251,
+    "Assassination": 253,
+    "Fury": 256,
+    "Protection": 257,
+    "Beast Training": 261,
+    "Protection": 267, # Paladin,
+    "Pet - Generic": 270,
+    "Plate Mail": 293,
+    "Language: Gnomish": 313,
+    "Language: Troll": 315,
+    "Enchanting": 333,
+    "Demonology": 354,
+    "Affliction": 355,
+    "Fishing": 356,
+    "Enhancement": 373,
+    "Restoration": 374,
+    "Elemental Combat": 375,
+    "Skinning": 393,
+    "Mail": 413,
+    "Leather": 414,
+    "Cloth": 415,
+    "Shield": 433,
+    "Fist Weapons": 473,
+    "Raptor Riding": 533,
+    "Mechanostrider Piloting": 553,
+    "Undead Horsemanship": 554,
+    "Restoration": 573, # Druid,
+    "Balance": 574,
+    "Destruction": 593,
+    "Holy": 594, # Paladin,
+    "Discipline": 613,
+    "Lockpicking": 633,
+    "Pet - Bat": 653,
+    "Pet - Hyena": 654,
+    "Pet - Owl": 655,
+    "Pet - Wind Serpent": 656,
+    "Language: Gutterspeak": 673,
+    "Kodo Riding": 713,
+    "Racial - Troll": 733,
+    "Racial - Gnome": 753,
+    "Racial - Human": 754,
+    "Pet - Event - Remote Control": 758,
+    "Riding": 762
+}
+
+duplicateSkills = {
+    "Protection": {"paladin": 267, "warrior": 257},
+    "Holy": {"paladin": 594, "priest": 56},
+    "Restoration": {"druid": 573, "shaman": 374}
 }
 
 startPosMap = {0: {"horde": ['1629.36', '-4373.4', '31.26', '1'], "alliance": ['-8833.38', '628.62', '94', '0'],},
@@ -1220,7 +1354,7 @@ instanceEnchantTemplateVan = Template("$main_enchant 0 0 0 0 0 0 0 0 $enchant_1 
 
 charactersTemplateWOTLK = Template("INSERT INTO `characters` VALUES ('$char_guid', '5', '$char_name', '$char_race', '$char_class', '$char_gender', '$char_level', '0', '300000000', '0', '0', '65568', '$pos_x', '$pos_y', '$pos_z', '$start_map', '0', '4.13832', '2 0 0 8 0 0 1048576 0 0 0 0 0 0 0 ', '0', '1', '200', '175', '1669632358', '1', '0', '0', '0', '0', '0', '0', '0', '0', '8', '0', '8', '4395', '0', '', '5000', '75000', '0', '0', '0', '0', '0', '0', '0', '4294967295', '0', '$char_health', '$char_power', '0', '0', '100', '0', '0', '0', '1', '0', '0 0 0 0 0 0 1048576 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 512 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4194304 256 0 0 0 0 0 0 0 0 67108864 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ', NULL, '0', '0 0 0 0 0 0 ', '0', '0', '0', NULL, NULL, NULL);")
 charactersTemplateTBC = Template("INSERT INTO `characters` VALUES ('$char_guid', '5', '$char_name', '$char_race', '$char_class', '$char_gender', '$char_level', '0', '300000000', '0', '0', '65568', '$pos_x', '$pos_y', '$pos_z', '$start_map', '0', '1.86449', '2 0 0 8 0 0 1048576 0 0 0 0 0 0 0 0 0 ', '0', '1', '200', '175', '1642414101', '1', '0', '0', '0', '0', '0', '0', '0', '0', '10', '0', '0', '3703', '0', '', '0', '0', '0', '0', '0', '0', '0', '0', '2147483647', '0', '5594', '0', '0', '0', '100', '0', '4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 ', NULL, '0', '0 0 ', '0', '0', '0', NULL, NULL, NULL);")
-charactersTemplateVan = Template("INSERT INTO `characters` VALUES ('$char_guid', '5', '$char_name', '$char_race', '$char_class', '$char_gender', '$char_level', '0', '300000000', '0', '0', '0', '$pos_x', '$pos_y', '$pos_z', '$start_map', '2.70526', '1024 0 0 0 0 0 0 0 ', '0', '1', '0', '0', '1642834034', '1', '0', '0', '0', '0', '0', '0', '0', '0', '2', '0', '32', '0', '0', '', '0', '0', '0', '0', '0', '0', '0', '63', '79', '0', '0', '100', '0', '4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 ', '$equipmentCache', '0', '0', '0', '0', NULL, NULL, NULL);")
+charactersTemplateVan = Template("INSERT INTO `characters` VALUES ('$char_guid', '5', '$char_name', '$char_race', '$char_class', '$char_gender', '$char_level', '0', '$char_money', '0', '0', '0', '$pos_x', '$pos_y', '$pos_z', '$start_map', '2.70526', '1024 0 0 0 0 0 0 0 ', '0', '1', '0', '0', '1642834034', '1', '0', '0', '0', '0', '0', '0', '0', '0', '2', '0', '32', '0', '0', '', '0', '0', '0', '0', '0', '0', '0', '63', '79', '0', '0', '100', '0', '4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 4294967295 ', '$equipmentCache', '0', '0', '0', '0', NULL, NULL, NULL);")
 
 skillsTemplate = Template(
     """INSERT INTO `character_skills` VALUES ('$char_guid', '$skill_id', '$current_skill', '$max_skill');
