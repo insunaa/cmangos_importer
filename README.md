@@ -1,5 +1,6 @@
 # WoW-Classic to CMaNGOS Character converter
 Export your 1.15.x, 2.5.x and 3.4.x characters to 1.12.x, 2.4.3 and 3.3.5 respectively.
+
 Do note that Season of Discovery is *not* supported, due to the very high number of custom items and custom spells which do not exist on CMaNGOS or 1.12 clients.
 
 Specifically it uses the data gathered by a forked variant of the Questionably Epic Gear Exporter to recreate a character from Vanilla/TBC Classic servers on CMaNGOS Servers.
