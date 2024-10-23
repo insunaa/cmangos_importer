@@ -88,13 +88,27 @@ def parse_file(f, exp):
         suffix = abs(int(suffix))
         enchantments = ""
         if exp == 0:
-            suffix = 0
-            enchantments = instanceEnchantTemplateVan.fill(
-                main_enchant=enchant,
-                enchant_1 = suffixTable[str(suffix)][0],
-                enchant_2 = suffixTable[str(suffix)][0],
-                enchant_3 = suffixTable[str(suffix)][0]
+            if str(suffix) in suffixTable2:
+                enchantments = instanceEnchantTemplateVan.fill(
+                    main_enchant=enchant,
+                    enchant_1 = suffixTable2[str(suffix)][0],
+                    enchant_2 = suffixTable2[str(suffix)][1],
+                    enchant_3 = suffixTable2[str(suffix)][2]
                 )
+            elif str(suffix) in suffixTable:
+                enchantments = instanceEnchantTemplateVan.fill(
+                    main_enchant=enchant,
+                    enchant_1 = suffixTable[str(suffix)][0],
+                    enchant_2 = suffixTable[str(suffix)][1],
+                    enchant_3 = suffixTable[str(suffix)][2]
+                )
+            else:
+                enchantments = instanceEnchantTemplateVan.fill(
+                    main_enchant=enchant,
+                    enchant_1 = 0,
+                    enchant_2 = 0,
+                    enchant_3 = 0
+                    )
         elif exp == 1:
             if "false" not in sockets and "true" in sockets:
                 socketBonus = itemSocketBonusMap[int(item_entry)]
@@ -142,7 +156,7 @@ def parse_file(f, exp):
                 item_guid=itemguiditr,
                 item_entry=item_entry,
                 item_count=item_count,
-                item_suffix=-suffix,
+                item_suffix=suffix,
                 enchantments=enchantments,
             )
         elif exp == 1:
