@@ -275,7 +275,6 @@ def parse_file(f, exp):
 
     def parse_bag(all_items):
         def parse_bag_base(bag_offset):
-#            nonlocal firstSlot, bagID
             suffix = "0"
             enchant = "0"
             gems = []
@@ -302,10 +301,7 @@ def parse_file(f, exp):
             if int(bagID) == 0:
                 str(int(slotID) + 1)
             add_to_itemlists(slotID, item_entry, suffix, enchant, gems, buckle[0], bagID, item_count=item_count, bag_offset=bag_offset)
-#            firstSlot += 1
 
-#        firstSlot = 23 + 14
-#        bagID = 1
         bag_offset = 0
         for slot in slots:
             for i in range(19):
@@ -361,29 +357,6 @@ def parse_file(f, exp):
                         talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=3)
                     elif int(talent["r4"]) == spell:
                         talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=4)
-
-        professions_spells = [
-            int(e) for e in all_items["spells"][3] if int(e) in all_prof_skill_ids
-        ]
-        for spell in professions_spells:
-            for profession in professionMap:
-                if learned_professions[profession]:
-                    continue
-                if int(spell) in professionMap[profession]:
-                    learned_professions[profession] = True
-                    skills += skillsTemplate.fill(
-                        skill_id=professionSkillMap[profession],
-                        current_skill=maxSkillMap["professions"][exp],
-                        max_skill=maxSkillMap["professions"][exp],
-                    )
-                    if (
-                        str(professionSpellMap[exp][profession])
-                        not in all_items["spells"][3]
-                    ):
-                        # override what player has and give him top profession level
-                        spells += spellTemplate.fill(
-                            spell_id=professionSpellMap[exp][profession]
-                        )
 
         for action in all_items["actions"][3]:
             actionInfo = action.split(",")
@@ -499,7 +472,6 @@ def parse_file(f, exp):
                 current_skill=skillRank,
                 max_skill=maxRank,
             )
-
 
     def write_pdump(char_info):
         startPos = startPosMap[exp][factions[clean(f[5].split("=")[1])]]
