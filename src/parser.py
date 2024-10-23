@@ -10,6 +10,9 @@ def clean(mystr, chars_to_remove=("\n",)):
 
 
 def parse_file(f, exp):
+    slotCache = {}
+    for slot in slots:
+        slotCache[slot] = 0
     def get_char_info():
         global skills
         char = f[3].split("=")
@@ -86,7 +89,7 @@ def parse_file(f, exp):
             suffix = 0
             enchantments = instanceEnchantTemplateVan.fill(
                 main_enchant=enchant,
-                enchant_1=suffixTable[str(suffix)][0],
+                enchant_1 = suffixTable[str(suffix)][0],
                 enchant_2 = suffixTable[str(suffix)][0],
                 enchant_3 = suffixTable[str(suffix)][0]
                 )
@@ -173,27 +176,7 @@ def parse_file(f, exp):
                 f[i + equip_offset].split("=")[2].split(",")[0].replace("\n", "")
             )
             add_to_itemlists(slotMap[slot], item_entry, suffix, enchant, gems, buckle[0].rstrip(), worn=True)
-
-        slots = [
-            "head",
-            "neck",
-            "shoulder",
-            "chest",
-            "waist",
-            "legs",
-            "feet",
-            "wrist",
-            "hands",
-            "finger1",
-            "finger2",
-            "trinket1",
-            "trinket2",
-            "back",
-            "main_hand",
-            "off_hand",
-            "relic",
-            "tabard",
-        ]
+            slotCache[slot] = item_entry
 
         for slot in slots:
             for i in range(19):
@@ -306,26 +289,6 @@ def parse_file(f, exp):
 
 #        firstSlot = 23 + 14
 #        bagID = 1
-        slots = [
-            "head",
-            "neck",
-            "shoulder",
-            "chest",
-            "waist",
-            "legs",
-            "feet",
-            "wrist",
-            "hands",
-            "finger1",
-            "finger2",
-            "trinket1",
-            "trinket2",
-            "back",
-            "main_hand",
-            "off_hand",
-            "relic",
-            "tabard",
-        ]
         bag_offset = 0
         for slot in slots:
             for i in range(19):
@@ -508,6 +471,7 @@ def parse_file(f, exp):
         charactersRow = ""
         enchantments = ""
         textIns = ""
+        equipmentCache = equipmentTemplate.fill(head=slotCache['head'], neck=slotCache['neck'], shoulder=slotCache['shoulder'], shirt=slotCache['shirt'], chest=slotCache['chest'], belt=slotCache['waist'], legs=slotCache['legs'], feet=slotCache['feet'], wrist=slotCache['wrist'], gloves=slotCache['hands'], back=slotCache['back'], mainhand=slotCache['main_hand'], offhand=slotCache['off_hand'], ranged=slotCache['relic'], tabard=slotCache['tabard'])
         bagId = 23162
         if exp == 0:
             version = "required_z2819_01_characters_item_instance_text_id_fix"
@@ -518,7 +482,8 @@ def parse_file(f, exp):
                 pos_x=startPos[0],
                 pos_y=startPos[1],
                 pos_z=startPos[2],
-                start_map=startPos[3])
+                start_map=startPos[3],
+                equipmentCache=equipmentCache)
         elif exp == 1:
             version = "required_s2452_01_characters_fishingSteps"
             enchantments = instanceEnchantTemplateTBC.fill(main_enchant=0, gem1=0, gem2=0, gem3=0, socket_bonus=0, enchant_1=0, enchant_2=0, enchant_3=0)
