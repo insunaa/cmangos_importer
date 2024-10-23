@@ -64,6 +64,7 @@ function scanGear()
 	addPrint("talents=N/A")
 	addPrint("spec=N/A")
 	addPrint("expansion=" .. GetExpansionLevel())
+	addPrint("gold=" .. GetMoney())
 	addPrint(" ")
 	
 	-- for loop for equipment
@@ -489,6 +490,16 @@ function scanGear()
 		addPrint("### GLYPHS ###")
 		addPrint("")
 		addPrint("### ACHIEVEMENTS ###")
+	end
+
+	addPrint("")
+	addPrint("### SKILLS ###")
+
+	for i = 1, GetNumSkillLines() do
+		skillName, header, _, skillRank, _, _, skillMaxRank = GetSkillLineInfo(i)
+		if header == nil then
+			addPrint(skillName .. ";" .. skillRank .. ";" .. skillMaxRank)
+		end
 	end
 	
 	addPrint("")
