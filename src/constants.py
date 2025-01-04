@@ -26,6 +26,7 @@ skills = ""
 cskills = ""
 spells = ""
 talents = ""
+quests = ""
 glyphs = ""
 achievements = ""
 inventory_list = ""
@@ -3367,6 +3368,7 @@ $characters_row
 $achievements
 $glyphs
 INSERT INTO `character_homebind` VALUES ('$char_guid', '$start_map', '3703', '$pos_x', '$pos_y', '$pos_z');
+$quests
 $inventory_list$pet_list
 $skills
 $spells
@@ -3433,6 +3435,14 @@ talentTemplate = Template(
 
 factionTemplate = Template(
     "INSERT INTO `character_reputation` VALUES ('$char_guid', '$faction_id', '$faction_standing', '1');\n"
+)
+
+questTemplate = Template(
+    "INSERT INTO `character_queststatus` VALUES ('$char_guid', '$quest_id', '1', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');\n"
+)
+
+questTemplateWotLK = Template(
+    "INSERT INTO `character_queststatus` VALUES ('$char_guid', '$quest_id', '1', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');\n"
 )
 
 glyphTemplate = Template(

@@ -252,6 +252,7 @@ def parse_file(f, exp):
             macros=["MACROS", 0, 0, []],
             spells=["SPELLS", 0, 0, []],
             factions=["FACTIONS", 0, 0, []],
+            quests=["QUESTS", 0, 0, []],
             glyphs=["GLYPHS", 0, 0, []],
             achievements=["ACHIEVEMENTS", 0, 0, []],
             cskills=["SKILLS", 0, len(f), []],
@@ -435,6 +436,15 @@ def parse_file(f, exp):
             macroBodies += actualBody
         write_macros(macroBodies)
     
+    def parse_quests():
+        global quests
+        for quest in all_items["quests"][3]:
+            quest_id = int(quest)
+            if exp > 1:
+                quests += questTemplateWotLK.fill(quest_id=quest_id)
+            else:
+                quests += questTemplate.fill(quest_id=quest_id)
+
     def parse_glyphs():
         global glyphs
         for glyph in all_items["glyphs"][3]:
@@ -523,6 +533,7 @@ def parse_file(f, exp):
             start_map=startPos[3],
             skills=cskills,
             actions=action_list,
+            quests=quests,
             inventory_list=inventory_list,
             pet_list=pet_list,
             spells=spells,
@@ -551,6 +562,7 @@ def parse_file(f, exp):
     parse_bag(all_items)
     parse_spells(all_items)
     parse_macros()
+    parse_quests()
     parse_glyphs()
     parse_achievements()
     parse_skills()

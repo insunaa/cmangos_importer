@@ -251,6 +251,22 @@ function scanGear()
 		factionIndex = factionIndex + 1
 	end
 
+	addPrint("")
+	addPrint("### QUESTS ###")
+
+	local maxQuests = 9665
+
+	if (expansion == 1) then
+		maxQuests = 12515
+	if (expansion == 2) then
+		maxQuests = 26034
+
+	for i = 1, maxQuests do
+		if (C_QuestLog.IsQuestFlaggedCompleted(i)) then
+			addPrint(i)
+		end
+	end
+
 	local expansion = GetExpansionLevel()
 
 	if (expansion == 2) then
