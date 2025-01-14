@@ -224,8 +224,10 @@ function scanGear()
 
 	if (expansion == 1) then
 		maxSpells = 53100
+	end
 	if (expansion == 2) then
 		maxSpells = 80900
+	end
 
 	for i = 1, maxSpells do
 		if (IsPlayerSpell(i)) then
@@ -258,8 +260,10 @@ function scanGear()
 
 	if (expansion == 1) then
 		maxQuests = 12515
+	end
 	if (expansion == 2) then
 		maxQuests = 26034
+	end
 
 	for i = 1, maxQuests do
 		if (C_QuestLog.IsQuestFlaggedCompleted(i)) then
