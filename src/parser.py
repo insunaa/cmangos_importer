@@ -255,7 +255,7 @@ def parse_file(f, exp):
             quests=["QUESTS", 0, 0, []],
             glyphs=["GLYPHS", 0, 0, []],
             achievements=["ACHIEVEMENTS", 0, 0, []],
-            cskills=["SKILLS", 0, len(f), []],
+            cskills=["SKILLS", 0, len(f) - 2, []],
         )
         previous_k = ""
         for k, v in all_items.items():
