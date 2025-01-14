@@ -65,6 +65,7 @@ function scanGear()
 	addPrint("spec=N/A")
 	addPrint("expansion=" .. GetExpansionLevel())
 	addPrint("gold=" .. GetMoney())
+	addPrint("locale=" .. GetLocale())
 	addPrint(" ")
 	
 	-- for loop for equipment
