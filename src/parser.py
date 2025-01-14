@@ -30,6 +30,7 @@ def parse_file(f, exp):
             char_level=clean(f[4].split("=")[1]),
             char_money=clean(f[14].split("=")[1]),
             char_expansion=clean(f[13].split("=")[1]),
+            char_locale=clean(f[15].split("=")[1]),
             char_health=10000,
             char_power=0,
         )
@@ -467,6 +468,9 @@ def parse_file(f, exp):
 
     def parse_skills():
         global cskills
+        locale = char_info["char_locale"]
+        if locale not in vanillaSkillMap:
+            print("Your client's language is not currently supported for skill export")
         for skill in all_items["cskills"][3]:
             splits = skill.split(";")
             skillName = splits[0]
@@ -474,9 +478,9 @@ def parse_file(f, exp):
             maxRank = int(splits[1])
             skill_id = 0
             if skillName in duplicateSkills:
-                skill_id = duplicateSkills[skillName][class_name]
+                skill_id = duplicateSkills[locale][skillName][class_name]
             else:
-                skill_id = vanillaEnSkillMap[skillName]
+                skill_id = vanillaSkillMap[locale][skillName]
             cskills += skillsTemplate.fill(
                 skill_id=skill_id,
                 current_skill=skillRank,
