@@ -116,7 +116,7 @@ function scanGear()
 		local bagLink = GetInventoryItemLink("player", invID)
 		local bagSplit = GetItemSplit(bagLink)
 		addPrint("quiver=,id=" .. bagSplit[1])
-		if (UnitExists("pet") ~= nil) then
+		if (UnitExists("pet") ~= nil and UnitExists("pet") ~= false) then
 			petID = UnitGUID("pet")
 			i = 1
 			local tokens = {}
