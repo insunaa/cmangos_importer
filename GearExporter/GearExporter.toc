@@ -1,0 +1,8 @@
+## Interface: 25100
+## Title: Character Exporter
+## Author: insunaa
+## Notes: Gear Importer for QE Live Burning Crusade
+## Version: 3.3
+
+embeds.xml
+gear_exporter.lua
