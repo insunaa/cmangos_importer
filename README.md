@@ -5,6 +5,8 @@ Do note that Season of Discovery is *not* supported, due to the very high number
 
 Specifically it uses the data gathered by a forked variant of the Questionably Epic Gear Exporter to recreate a character from Vanilla/TBC Classic servers on CMaNGOS Servers.
 
+To use the addon, copy it into your `AddOns` directory, reload the game and then type `/gearexport` into the chat. This will open a window with your characters data. Copy the entire thing into a text file like `exported_character.txt` which is used by the python importer script.
+
 Usage: `python3 main.py exported_character.txt expansion`  
 The `expansion` parameter is optional and can be `0` for 1.15.x -> 1.12.x or `1`(default) for 2.5.x -> 2.4.3 or `2` for 3.4.x -> 3.3.5
 
@@ -36,4 +38,3 @@ If you have ideas for improvements or find bugs, please open an issue, as I'm su
 Big thanks to https://github.com/slavanorm/ for his major refactor of this script.
 
 # 从魔兽世界经典导出玩家数据并将数据重新导入CMaNGOS的项目
-
