@@ -1,7 +1,8 @@
-from datetime import datetime
 import datetime
-import time
 import math
+import time
+from datetime import datetime
+
 from src.constants import *
 
 
@@ -13,6 +14,7 @@ def parse_file(f, exp):
     slotCache = {}
     for slot in slots:
         slotCache[slot] = 0
+
     def get_char_info():
         global skills, class_name
         char = f[3].split("=")
@@ -48,30 +50,48 @@ def parse_file(f, exp):
                 max_skill=int(result["char_level"]) * 5,
             )
 
-        exp =  clean(f[13].split("=")[1])
+        exp = clean(f[13].split("=")[1])
 
         return result
 
-    def add_to_itemlists(slot_id, item_entry, suffix, enchant, gems, buckle, bag_id="0", item_count=1, bagno=5, worn=False, bag_offset=0):
+    def add_to_itemlists(
+        slot_id,
+        item_entry,
+        suffix,
+        enchant,
+        gems,
+        buckle,
+        bag_id="0",
+        item_count=1,
+        bagno=5,
+        worn=False,
+        bag_offset=0,
+    ):
         global inventory_list, instance_list, itemguiditr
-        bagMap = {"0":0, "1":10000 + ((bag_offset + 0) * 2), "2":10000 + ((bag_offset + 1) * 2), "3":10000 + ((bag_offset + 2) * 2), "4":10000 + ((bag_offset + 3) * 2)}
+        bagMap = {
+            "0": 0,
+            "1": 10000 + ((bag_offset + 0) * 2),
+            "2": 10000 + ((bag_offset + 1) * 2),
+            "3": 10000 + ((bag_offset + 2) * 2),
+            "4": 10000 + ((bag_offset + 3) * 2),
+        }
         slot_id = int(slot_id)
         socketBonus = 0
-        if bag_id != "0" and bagno>3 and not worn:
+        if bag_id != "0" and bagno > 3 and not worn:
             inventory_list += wornTemplate.fill(
                 slot_id=slot_id,
                 item_guid=itemguiditr,
                 item_entry=item_entry,
-                bag_id = bagMap[bag_id],
+                bag_id=bagMap[bag_id],
             )
-        elif bag_id=="0" and bagno <= 3 and worn:
+        elif bag_id == "0" and bagno <= 3 and worn:
             inventory_list += wornTemplate.fill(
                 slot_id=slot_id - 1,
                 item_guid=itemguiditr,
                 item_entry=item_entry,
                 bag_id=bag_id,
             )
-        elif bag_id=="0" and bagno > 3 and not worn:
+        elif bag_id == "0" and bagno > 3 and not worn:
             inventory_list += wornTemplate.fill(
                 slot_id=((slot_id - 1) + 23),
                 item_guid=itemguiditr,
@@ -84,7 +104,7 @@ def parse_file(f, exp):
                 item_guid=itemguiditr,
                 item_entry=item_entry,
                 bag_id=bag_id,
-                )
+            )
         sockets = [gems[0].split(":")[1], gems[1].split(":")[1], gems[2].split(":")[1]]
         suffix = abs(int(suffix))
         enchantments = ""
@@ -92,24 +112,21 @@ def parse_file(f, exp):
             if str(suffix) in suffixTable2:
                 enchantments = instanceEnchantTemplateVan.fill(
                     main_enchant=enchant,
-                    enchant_1 = suffixTable2[str(suffix)][0],
-                    enchant_2 = suffixTable2[str(suffix)][1],
-                    enchant_3 = suffixTable2[str(suffix)][2]
+                    enchant_1=suffixTable2[str(suffix)][0],
+                    enchant_2=suffixTable2[str(suffix)][1],
+                    enchant_3=suffixTable2[str(suffix)][2],
                 )
             elif str(suffix) in suffixTable:
                 enchantments = instanceEnchantTemplateVan.fill(
                     main_enchant=enchant,
-                    enchant_1 = suffixTable[str(suffix)][0],
-                    enchant_2 = suffixTable[str(suffix)][1],
-                    enchant_3 = suffixTable[str(suffix)][2]
+                    enchant_1=suffixTable[str(suffix)][0],
+                    enchant_2=suffixTable[str(suffix)][1],
+                    enchant_3=suffixTable[str(suffix)][2],
                 )
             else:
                 enchantments = instanceEnchantTemplateVan.fill(
-                    main_enchant=enchant,
-                    enchant_1 = 0,
-                    enchant_2 = 0,
-                    enchant_3 = 0
-                    )
+                    main_enchant=enchant, enchant_1=0, enchant_2=0, enchant_3=0
+                )
         elif exp == 1:
             if "false" not in sockets and "true" in sockets:
                 socketBonus = itemSocketBonusMap[int(item_entry)]
@@ -124,34 +141,50 @@ def parse_file(f, exp):
                 enchant_1=suffixTable[str(suffix)][0],
                 enchant_2=suffixTable[str(suffix)][1],
                 enchant_3=suffixTable[str(suffix)][2],
-                )
+            )
         elif exp == 2:
-            if "false" not in sockets and "true" in sockets and int(item_entry) in itemSocketBonusMapWotlk:
+            if (
+                "false" not in sockets
+                and "true" in sockets
+                and int(item_entry) in itemSocketBonusMapWotlk
+            ):
                 socketBonus = itemSocketBonusMapWotlk[int(item_entry)]
             if str(suffix) not in suffixTable:
                 suffix = 0
             if buckle == "false":
                 enchantments = instanceEnchantTemplateWOTLK.fill(
                     main_enchant=enchant,
-                    gem1=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[0].split(":")[0])]],
-                    gem2=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[1].split(":")[0])]],
-                    gem3=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[2].split(":")[0])]],
+                    gem1=gemPropertyMapWotLK[
+                        gemIDPropertyMapWotlk[int(gems[0].split(":")[0])]
+                    ],
+                    gem2=gemPropertyMapWotLK[
+                        gemIDPropertyMapWotlk[int(gems[1].split(":")[0])]
+                    ],
+                    gem3=gemPropertyMapWotLK[
+                        gemIDPropertyMapWotlk[int(gems[2].split(":")[0])]
+                    ],
                     socket_bonus=socketBonus,
                     enchant_1=suffixTable[str(suffix)][0],
                     enchant_2=suffixTable[str(suffix)][1],
                     enchant_3=suffixTable[str(suffix)][2],
-                    )
+                )
             else:
                 enchantments = instanceEnchantTemplateWOTLK.fill(
                     main_enchant=enchant,
-                    gem1=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[0].split(":")[0])]],
-                    gem2=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[1].split(":")[0])]],
-                    gem3=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gems[2].split(":")[0])]],
+                    gem1=gemPropertyMapWotLK[
+                        gemIDPropertyMapWotlk[int(gems[0].split(":")[0])]
+                    ],
+                    gem2=gemPropertyMapWotLK[
+                        gemIDPropertyMapWotlk[int(gems[1].split(":")[0])]
+                    ],
+                    gem3=gemPropertyMapWotLK[
+                        gemIDPropertyMapWotlk[int(gems[2].split(":")[0])]
+                    ],
                     socket_bonus=socketBonus,
                     enchant_1=3729,
                     enchant_2=suffixTable[str(suffix)][1],
                     enchant_3=suffixTable[str(suffix)][2],
-                    )
+                )
         if exp == 0:
             instance_list += instanceTemplate.fill(
                 item_guid=itemguiditr,
@@ -182,17 +215,33 @@ def parse_file(f, exp):
             if len(item_info) == 9:
                 suffix = item_info[2].split("=")[1]
                 enchant = item_info[4].split("=")[1]
-                gems = [item_info[5].split("=")[1], item_info[6].split("=")[1], item_info[7].split("=")[1]]
+                gems = [
+                    item_info[5].split("=")[1],
+                    item_info[6].split("=")[1],
+                    item_info[7].split("=")[1],
+                ]
                 buckle = [item_info[8].split("=")[1]]
             elif len(item_info) == 7:
                 enchant = item_info[2].split("=")[1]
-                gems = [item_info[3].split("=")[1], item_info[4].split("=")[1], item_info[5].split("=")[1]]
+                gems = [
+                    item_info[3].split("=")[1],
+                    item_info[4].split("=")[1],
+                    item_info[5].split("=")[1],
+                ]
                 buckle = [item_info[6].split("=")[1]]
 
             item_entry = (
                 f[i + equip_offset].split("=")[2].split(",")[0].replace("\n", "")
             )
-            add_to_itemlists(slotMap[slot], item_entry, suffix, enchant, gems, buckle[0].rstrip(), worn=True)
+            add_to_itemlists(
+                slotMap[slot],
+                item_entry,
+                suffix,
+                enchant,
+                gems,
+                buckle[0].rstrip(),
+                worn=True,
+            )
             slotCache[slot] = item_entry
 
         for slot in slots:
@@ -268,7 +317,7 @@ def parse_file(f, exp):
                     previous_k = k
                     break
         for k, v in all_items.items():
-            for i in range(v[1], v[2] -1):
+            for i in range(v[1], v[2] - 1):
                 text = f[i].rstrip("\n")
                 if text:
                     v[3].append(text)
@@ -292,17 +341,35 @@ def parse_file(f, exp):
                 item_count = clean(item_data[5].split("=")[1])
                 suffix = item_data[3].split("=")[1]
                 enchant = item_data[6].split("=")[1]
-                gems = [item_data[7].split("=")[1], item_data[8].split("=")[1], item_data[9].split("=")[1]]
+                gems = [
+                    item_data[7].split("=")[1],
+                    item_data[8].split("=")[1],
+                    item_data[9].split("=")[1],
+                ]
                 buckle = [item_data[10].split("=")[1]]
             if len(item_data) == 9:
                 enchant = item_data[4].split("=")[1]
-                gems = [item_data[5].split("=")[1], item_data[6].split("=")[1], item_data[7].split("=")[1]]
+                gems = [
+                    item_data[5].split("=")[1],
+                    item_data[6].split("=")[1],
+                    item_data[7].split("=")[1],
+                ]
                 buckle = [item_data[8].split("=")[1]]
             slotID = str(int(item_data[1].split("=")[1]) - 1)
             bagID = item_data[0].split("=")[1]
             if int(bagID) == 0:
                 str(int(slotID) + 1)
-            add_to_itemlists(slotID, item_entry, suffix, enchant, gems, buckle[0], bagID, item_count=item_count, bag_offset=bag_offset)
+            add_to_itemlists(
+                slotID,
+                item_entry,
+                suffix,
+                enchant,
+                gems,
+                buckle[0],
+                bagID,
+                item_count=item_count,
+                bag_offset=bag_offset,
+            )
 
         bag_offset = 0
         for slot in slots:
@@ -313,7 +380,16 @@ def parse_file(f, exp):
             if "=" not in item and "," in item:
                 slot = int(item.split(",")[0]) + 18
                 iid = int(item.split(",")[1])
-                add_to_itemlists(slot, iid, suffix=0, enchant=0, bag_id=0, gems=["0:nil", "0:nil", "0:nil"], buckle="false", bagno=0)
+                add_to_itemlists(
+                    slot,
+                    iid,
+                    suffix=0,
+                    enchant=0,
+                    bag_id=0,
+                    gems=["0:nil", "0:nil", "0:nil"],
+                    buckle="false",
+                    bagno=0,
+                )
             else:
                 parse_bag_base(bag_offset)
 
@@ -350,15 +426,25 @@ def parse_file(f, exp):
                 for index in range(len(talentArray)):
                     talent = talentArray[index]
                     if int(talent["r0"]) == spell:
-                        talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=0)
+                        talents += talentTemplate.fill(
+                            talent_id=talent["id"], current_rank=0
+                        )
                     elif int(talent["r1"]) == spell:
-                        talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=1)
+                        talents += talentTemplate.fill(
+                            talent_id=talent["id"], current_rank=1
+                        )
                     elif int(talent["r2"]) == spell:
-                        talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=2)
+                        talents += talentTemplate.fill(
+                            talent_id=talent["id"], current_rank=2
+                        )
                     elif int(talent["r3"]) == spell:
-                        talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=3)
+                        talents += talentTemplate.fill(
+                            talent_id=talent["id"], current_rank=3
+                        )
                     elif int(talent["r4"]) == spell:
-                        talents+=talentTemplate.fill(talent_id=talent["id"],current_rank=4)
+                        talents += talentTemplate.fill(
+                            talent_id=talent["id"], current_rank=4
+                        )
 
         for action in all_items["actions"][3]:
             actionInfo = action.split(",")
@@ -422,7 +508,7 @@ def parse_file(f, exp):
         macroBodies = ""
 
         for macroSlot in macroMeta:
-            if (int(macroSlot) < 100):
+            if int(macroSlot) < 100:
                 continue
             fullMacro = macroMeta[macroSlot]
             macroBody = ""
@@ -436,7 +522,7 @@ def parse_file(f, exp):
             )
             macroBodies += actualBody
         write_macros(macroBodies)
-    
+
     def parse_quests():
         global quests
         for quest in all_items["quests"][3]:
@@ -452,7 +538,9 @@ def parse_file(f, exp):
             glyphslot = int(glyph.split(",")[0])
             glyphspell = glyph.split(",")[1]
             if glyphspell in glyphMap:
-                glyphs += glyphTemplate.fill(glyph_slot=glyphslot-1,glyph_id=glyphMap[glyphspell])
+                glyphs += glyphTemplate.fill(
+                    glyph_slot=glyphslot - 1, glyph_id=glyphMap[glyphspell]
+                )
 
     def parse_achievements():
         global achievements
@@ -462,9 +550,11 @@ def parse_file(f, exp):
                 year = int(achievement.split(",")[1])
                 month = int(achievement.split(",")[2])
                 day = int(achievement.split(",")[3])
-                date_time = datetime.datetime(year+2000, month, day, 0, 0)
+                date_time = datetime.datetime(year + 2000, month, day, 0, 0)
                 timestamp = time.mktime(date_time.timetuple())
-                achievements += achievementTemplate.fill(achievement_id=achId,timestamp=timestamp)
+                achievements += achievementTemplate.fill(
+                    achievement_id=achId, timestamp=timestamp
+                )
 
     def parse_skills():
         global cskills
@@ -493,11 +583,29 @@ def parse_file(f, exp):
         charactersRow = ""
         enchantments = ""
         textIns = ""
-        equipmentCache = equipmentTemplate.fill(head=slotCache['head'], neck=slotCache['neck'], shoulder=slotCache['shoulder'], shirt=slotCache['shirt'], chest=slotCache['chest'], belt=slotCache['waist'], legs=slotCache['legs'], feet=slotCache['feet'], wrist=slotCache['wrist'], gloves=slotCache['hands'], back=slotCache['back'], mainhand=slotCache['main_hand'], offhand=slotCache['off_hand'], ranged=slotCache['relic'], tabard=slotCache['tabard'])
+        equipmentCache = equipmentTemplate.fill(
+            head=slotCache["head"],
+            neck=slotCache["neck"],
+            shoulder=slotCache["shoulder"],
+            shirt=slotCache["shirt"],
+            chest=slotCache["chest"],
+            belt=slotCache["waist"],
+            legs=slotCache["legs"],
+            feet=slotCache["feet"],
+            wrist=slotCache["wrist"],
+            gloves=slotCache["hands"],
+            back=slotCache["back"],
+            mainhand=slotCache["main_hand"],
+            offhand=slotCache["off_hand"],
+            ranged=slotCache["relic"],
+            tabard=slotCache["tabard"],
+        )
         bagId = 23162
         if exp == 0:
             version = "required_z2819_01_characters_item_instance_text_id_fix"
-            enchantments = instanceEnchantTemplateVan.fill(main_enchant=0, enchant_1=0, enchant_2=0, enchant_3=0)
+            enchantments = instanceEnchantTemplateVan.fill(
+                main_enchant=0, enchant_1=0, enchant_2=0, enchant_3=0
+            )
             bagId = 14156
             charactersRow = charactersTemplateVan.fill(
                 **char_info,
@@ -505,26 +613,47 @@ def parse_file(f, exp):
                 pos_y=startPos[1],
                 pos_z=startPos[2],
                 start_map=startPos[3],
-                equipmentCache=equipmentCache)
+                equipmentCache=equipmentCache,
+            )
         elif exp == 1:
             version = "required_s2452_01_characters_fishingSteps"
-            enchantments = instanceEnchantTemplateTBC.fill(main_enchant=0, gem1=0, gem2=0, gem3=0, socket_bonus=0, enchant_1=0, enchant_2=0, enchant_3=0)
+            enchantments = instanceEnchantTemplateTBC.fill(
+                main_enchant=0,
+                gem1=0,
+                gem2=0,
+                gem3=0,
+                socket_bonus=0,
+                enchant_1=0,
+                enchant_2=0,
+                enchant_3=0,
+            )
             charactersRow = charactersTemplateTBC.fill(
                 **char_info,
                 pos_x=startPos[0],
                 pos_y=startPos[1],
                 pos_z=startPos[2],
-                start_map=startPos[3])
+                start_map=startPos[3],
+            )
         else:
             version = "required_14061_01_characters_fishingSteps"
-            enchantments = instanceEnchantTemplateWOTLK.fill(main_enchant=0, gem1=0, gem2=0, gem3=0, socket_bonus=0, enchant_1=0, enchant_2=0, enchant_3=0)
+            enchantments = instanceEnchantTemplateWOTLK.fill(
+                main_enchant=0,
+                gem1=0,
+                gem2=0,
+                gem3=0,
+                socket_bonus=0,
+                enchant_1=0,
+                enchant_2=0,
+                enchant_3=0,
+            )
             charactersRow = charactersTemplateWOTLK.fill(
                 **char_info,
                 pos_x=startPos[0],
                 pos_y=startPos[1],
                 pos_z=startPos[2],
-                start_map=startPos[3])
-            textIns=", ''"
+                start_map=startPos[3],
+            )
+            textIns = ", ''"
 
         result = pdumpTemplate.fill(
             bag_id=bagId,
@@ -553,7 +682,12 @@ def parse_file(f, exp):
 
         with open(char_info["char_name"] + randNo + ".sql", "w") as writer:
             writer.write(result)
-            print("Character conversion successful! Export written to: " + char_info["char_name"] + randNo + ".sql")
+            print(
+                "Character conversion successful! Export written to: "
+                + char_info["char_name"]
+                + randNo
+                + ".sql"
+            )
 
     def write_macros(macro_file):
         with open("macros-cache.txt", "w") as writer:
