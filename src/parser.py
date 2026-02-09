@@ -129,18 +129,30 @@ def parse_file(f, exp):
         elif exp == 1:
             if "false" not in sockets and "true" in sockets:
                 socketBonus = itemSocketBonusMap[int(item_entry)]
-            if str(suffix) not in suffixTable:
-                suffix = 0
-            enchantments = instanceEnchantTemplateTBC.fill(
-                main_enchant=enchant,
-                gem1=gemPropertyMap[gemIDPropertyMap[int(gems[0].split(":")[0])]],
-                gem2=gemPropertyMap[gemIDPropertyMap[int(gems[1].split(":")[0])]],
-                gem3=gemPropertyMap[gemIDPropertyMap[int(gems[2].split(":")[0])]],
-                socket_bonus=socketBonus,
-                enchant_1=suffixTable[str(suffix)][0],
-                enchant_2=suffixTable[str(suffix)][1],
-                enchant_3=suffixTable[str(suffix)][2],
-            )
+            #            if str(suffix) not in suffixTable:
+            #                suffix = 0
+            if str(suffix) in suffixTable:
+                enchantments = instanceEnchantTemplateTBC.fill(
+                    main_enchant=enchant,
+                    gem1=gemPropertyMap[gemIDPropertyMap[int(gems[0].split(":")[0])]],
+                    gem2=gemPropertyMap[gemIDPropertyMap[int(gems[1].split(":")[0])]],
+                    gem3=gemPropertyMap[gemIDPropertyMap[int(gems[2].split(":")[0])]],
+                    socket_bonus=socketBonus,
+                    enchant_1=suffixTable[str(suffix)][0],
+                    enchant_2=suffixTable[str(suffix)][1],
+                    enchant_3=suffixTable[str(suffix)][2],
+                )
+            else:
+                enchantments = instanceEnchantTemplateTBC.fill(
+                    main_enchant=enchant,
+                    gem1=gemPropertyMap[gemIDPropertyMap[int(gems[0].split(":")[0])]],
+                    gem2=gemPropertyMap[gemIDPropertyMap[int(gems[1].split(":")[0])]],
+                    gem3=gemPropertyMap[gemIDPropertyMap[int(gems[2].split(":")[0])]],
+                    socket_bonus=socketBonus,
+                    enchant_1=suffixTable[str(suffix)][0],
+                    enchant_2=suffixTable[str(suffix)][1],
+                    enchant_3=suffixTable[str(suffix)][2],
+                )
         elif exp == 2:
             if (
                 "false" not in sockets
@@ -193,7 +205,13 @@ def parse_file(f, exp):
                 enchantments=enchantments,
             )
         elif exp == 1:
-            pass
+            instance_list += instanceTemplate.fill(
+                item_guid=itemguiditr,
+                item_entry=item_entry,
+                item_count=item_count,
+                item_suffix=(-suffix),
+                enchantments=enchantments,
+            )
         elif exp == 2:
             instance_list += instanceTemplateWotLK.fill(
                 item_guid=itemguiditr,
@@ -615,7 +633,7 @@ def parse_file(f, exp):
                 equipmentCache=equipmentCache,
             )
         elif exp == 1:
-            version = "required_s2452_01_characters_fishingSteps"
+            version = "required_s2473_01_characters_item_instance_text_id_fix"
             enchantments = instanceEnchantTemplateTBC.fill(
                 main_enchant=0,
                 gem1=0,
@@ -632,6 +650,7 @@ def parse_file(f, exp):
                 pos_y=startPos[1],
                 pos_z=startPos[2],
                 start_map=startPos[3],
+                equipmentCache=equipmentCache,
             )
         else:
             version = "required_14061_01_characters_fishingSteps"
@@ -644,6 +663,7 @@ def parse_file(f, exp):
                 enchant_1=0,
                 enchant_2=0,
                 enchant_3=0,
+                equipmentCache=equipmentCache,
             )
             charactersRow = charactersTemplateWOTLK.fill(
                 **char_info,
