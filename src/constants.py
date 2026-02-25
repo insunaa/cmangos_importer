@@ -11686,6 +11686,9 @@ professionSpellMap = {
         "tailoring": 26790,
         "cooking": 33359,
         "firstaid": 27028,
+        "mining": 29354,
+        "skinning": 32678,
+        "herbalism": 28695,
     },
     2: {
         "alchemy": 51304,
