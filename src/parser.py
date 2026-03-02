@@ -576,18 +576,32 @@ def parse_file(f, exp):
     def parse_skills():
         global cskills
         locale = char_info["char_locale"]
-        if locale not in vanillaSkillMap:
+        if locale not in vanillaSkillMap and locale not in tbcSkillMap:
             print("Your client's language is not currently supported for skill export")
+            return
         for skill in all_items["cskills"][3]:
             splits = skill.split(";")
             skillName = splits[0]
             skillRank = int(splits[1])
             maxRank = int(splits[1])
             skill_id = 0
-            if skillName in duplicateSkills:
-                skill_id = duplicateSkills[locale][skillName][class_name]
+            if exp == 0:
+                if skillName in duplicateSkills:
+                    skill_id = duplicateSkills[locale][skillName][class_name]
+                elif skillName in vanillaSkillMap[locale]:
+                    skill_id = vanillaSkillMap[locale][skillName]
+                else:
+                    print("Skill not found in Vanilla skill map")
+            elif exp == 1:
+                if skillName in duplicateSkills:
+                    skill_id = duplicateSkills[locale][skillName][class_name]
+                elif skillName in tbcSkillMap[locale]:
+                    skill_id = tbcSkillMap[locale][skillName]
+                else:
+                    print("Skill not found in TBC skill map")
             else:
-                skill_id = vanillaSkillMap[locale][skillName]
+                print("WotLK not supported for skill export yet")
+
             cskills += skillsTemplate.fill(
                 skill_id=skill_id,
                 current_skill=skillRank,
