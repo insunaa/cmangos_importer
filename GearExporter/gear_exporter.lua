@@ -455,21 +455,11 @@ function GetMainFrame(text)
             frameConfig.ofsy                             = ofsy
         end)
 
-        local closeBtn = CreateFrame("Button", "SimcCloseButton", f, "UIPanelButtonTemplate")
-        closeBtn:SetText("Copy")
-        closeBtn:SetWidth(100)
-        closeBtn:SetHeight(25)
-        closeBtn:SetPoint("BOTTOM", f, "BOTTOM", 0, 15)
-        closeBtn:SetScript("OnClick", function()
-            SetClipboardText(SimcEditBox:GetText())
-            f:Hide()
-        end)
-
         local sf = CreateFrame("ScrollFrame", "SimcScrollFrame", f, "UIPanelScrollFrameTemplate")
         sf:SetPoint("LEFT", 16, 0)
         sf:SetPoint("RIGHT", -16, 0)
         sf:SetPoint("TOP", 0, -32)
-        sf:SetPoint("BOTTOM", closeBtn, "TOP", 0, -10)
+        sf:SetPoint("BOTTOM", f, "BOTTOM", 0, -35)
 
         local eb = CreateFrame("EditBox", "SimcEditBox", SimcScrollFrame)
         eb:SetSize(sf:GetSize())
