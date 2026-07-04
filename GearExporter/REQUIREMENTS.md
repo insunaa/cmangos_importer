@@ -2,7 +2,7 @@
 
 ## Overview
 
-`gear_exporter.lua` is a World of Warcraft addon that scans the player's character state and exports it as **structured JSON**. The previous version emitted flat `key=value` text lines; this rewrite collects all data into nested Lua tables and serializes them with a built-in JSON encoder.
+`gear_exporter.lua` is a World of Warcraft addon that scans the player's character state and exports it as **structured, pretty-printed JSON**. The previous version emitted flat `key=value` text lines; this rewrite collects all data into nested Lua tables and serializes them with a dedicated JSON encoder in `json_lib.lua`.
 
 ---
 
@@ -10,20 +10,32 @@
 
 | Component | Purpose |
 |---|---|
-| `scanGear()` | Entry point. Iterates WoW APIs, populates a single `data` table, serializes it to JSON, and displays the result in an edit-box frame. |
-| `toJson(tbl)` | Pure-function JSON serializer. Recursively walks Lua tables, emits objects (`{}`) for string-keyed tables and arrays (`[]`) for contiguous 1-based numeric tables. Handles strings (quoted + escaped), numbers, booleans, and nested tables. Nil values are omitted. |
+| `scanGear()` | Entry point. Iterates WoW APIs, populates a single `data` table, serializes it to JSON using an explicit root key order, and displays the result in an edit-box frame. |
+| `toJson(tbl, keyOrder)` | Global JSON serializer (defined in `json_lib.lua`). Recursively walks Lua tables, emits objects (`{}`) for string-keyed tables and arrays (`[]`) for contiguous 1-based numeric tables. Handles strings (quoted + escaped), numbers, booleans, and nested tables. Nil values are omitted. Accepts an optional `keyOrder` array to enforce deterministic key ordering with pretty-print indentation. |
 | `GetItemSplit(itemLink)` | Parses a WoW item link string into a numeric array of fields (item ID, enchant, gems, suffix, unique, etc.). |
-| `toItemRecord(...)` | Helper that assembles a single item's raw fields into a clean Lua table suitable for JSON serialization. |
-| `GetMainFrame(text)` | Creates / reuses the `SimcFrame` dialog with a scrollable edit box. Unchanged from original. |
-| `convertSlot(raw)` | Maps WoW inventory type constants (e.g. `INVTYPE_HEAD`) to human-readable slot names. Unchanged. |
+| `GetMainFrame(text)` | Creates / reuses the `SimcFrame` dialog — a resizable, movable frame with a scrollable edit box and a single "Okay" button. |
+| `convertSlot(raw)` | Maps WoW inventory type constants (e.g. `INVTYPE_HEAD`) to human-readable slot names. |
 
 > **Note:** The old `addPrint()` function was removed entirely — all data now flows through the `data` table.
+>
+> **Note:** The `toItemRecord(...)` helper from earlier drafts was folded directly into the equipment/bag scan loops — there is no longer a separate function for this.
+
+---
+
+## File Layout
+
+```
+GearExporter/
+├── GearExporter.toc    # Addon manifest — lists json_lib.lua before gear_exporter.lua
+├── json_lib.lua        # Global toJson() serializer (loaded first)
+└── gear_exporter.lua   # Main logic: scanGear(), GetMainFrame(), convertSlot()
+```
 
 ---
 
 ## JSON Schema
 
-The root object has the following top-level keys:
+The root object has the following top-level keys, **always in this order**:
 
 ```json
 {
@@ -46,6 +58,8 @@ The root object has the following top-level keys:
 }
 ```
 
+Key ordering is enforced by passing an explicit `rootKeys` array to `toJson()` — without this, Lua's `pairs()` would yield arbitrary key order.
+
 ---
 
 ## Data Structures
@@ -59,7 +73,7 @@ The root object has the following top-level keys:
 | `level` | number | Character level |
 | `race` | string | Race name |
 | `gender` | number | 1=male, 2=female, 3=neutral (offset by -2 from WoW API) |
-| `region` | null | Not available in Classic API — always null |
+| `region` | null | Not available in Classic API — always omitted (nil) |
 | `server` | string | Realm name (`GetRealmName`) |
 | `role` | string | Hardcoded `"N/A"` |
 | `professions` | string | Hardcoded `"N/A"` |
@@ -71,15 +85,13 @@ The root object has the following top-level keys:
 
 ### EquipmentMap
 
-An object keyed by slot name. Each value is an **ItemRecord**.
+An object keyed by slot name. Each value is an **ItemRecord**. The JSON key IS the slot name so there is no redundant `slot` field inside each record.
 
 | Key | Description |
 |---|---|
 | `head`, `neck`, `shoulder`, `chest`, `waist`, `legs`, `feet`, `wrist`, `hands`, `finger1`, `finger2`, `trinket1`, `trinket2`, `back`, `main_hand`, `off_hand`, `relic` | Standard equipment slots. Only present if an item is equipped in that slot. |
 
 ### ItemRecord (equipment items)
-
-Same structure as bag items, keyed by slot name. The JSON key IS the slot so no redundant `slot` field:
 
 | Field | Type | Description |
 |---|---|---|
@@ -193,10 +205,14 @@ Same structure as bag items, keyed by slot name. The JSON key IS the slot so no 
 ## Behavior Notes
 
 - **Nil omission:** The JSON serializer omits keys whose value is `nil`. This keeps the output compact — a bag item without an enchant simply has no `enchantId` key rather than `"enchantId": null`.
+- **Deterministic key order:** Root-level keys are serialized in the exact order defined by the `rootKeys` array passed to `toJson()`. Nested objects use default `pairs()` iteration (order not guaranteed, but semantically irrelevant).
+- **Pretty printing:** Output is indented with 2-space indentation and one member per line for readability.
 - **Expansion gating:** Glyphs and achievements are only populated when `expansion == 2` (Cataclysm). For earlier expansions those arrays are empty.
 - **Hunter-specific data:** The `quiver` and `pet` keys only appear for hunters. Pets only appear if one is active.
-- **Macro body:** The original code replaced commas with dots to avoid breaking the flat format. The JSON version stores macro bodies verbatim, as commas are safe inside JSON strings.
+- **Macro body:** Stored verbatim — commas are safe inside JSON strings, no comma-to-dot replacement needed.
 - **Spells / Quests:** Stored as plain number arrays (spell IDs and quest IDs the player has unlocked/completed).
+- **Socket info API:** Gem match status uses `C_ItemSocketInfo.GetExistingSocketInfo(j)` which returns `(name, icon, gemMatchesSocket)`. The third return value is a boolean indicating whether the gem color matches its socket.
+- **Display frame:** A single resizable DialogBoxFrame with a scrollable edit box. The built-in "Okay" button closes the frame. No additional buttons are present.
 
 ---
 
@@ -217,10 +233,12 @@ Same structure as bag items, keyed by slot name. The JSON key IS the slot so no 
   },
   "equipment": {
     "head": {
-      "slot": "head",
       "id": 40207,
       "suffix": -128,
-      "gems": ["32586:Meta", "40037:Red"]
+      "gems": [
+        {"id": 32586, "matched": true},
+        {"id": 40037, "matched": false}
+      ]
     }
   },
   "talents": [
