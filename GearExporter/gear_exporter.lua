@@ -16,48 +16,6 @@ local function GetItemSplit(itemLink)
     return itemSplit
 end
 
--- Helper: build an item record table from the raw data extracted by GetItemSplit / socket API
-local function toItemRecord(itemID, suffix, enchantId, gem1, gem2, gem3, gemColors, hasBuckle, count)
-    local record = { id = itemID }
-    if suffix and suffix ~= 0 then
-        record.suffix = suffix
-    end
-    if enchantId and enchantId ~= 0 then
-        record.enchantId = enchantId
-    end
-    -- Gems are always present but may be nil / 0
-    if gem1 and gem1 ~= 0 then
-        record.gems = { tostring(gem1) .. ":" .. (gemColors[1] or "nil") }
-        if gem2 and gem2 ~= 0 then
-            table.insert(record.gems, tostring(gem2) .. ":" .. (gemColors[2] or "nil"))
-        end
-        if gem3 and gem3 ~= 0 then
-            table.insert(record.gems, tostring(gem3) .. ":" .. (gemColors[3] or "nil"))
-        end
-    end
-    if hasBuckle == true then
-        record.buckle = true
-    end
-    if count then
-        record.count = count
-    end
-    return record
-end
-
-local function getSockets(equipID, itemLink)
-    -- Returns { enchantId, gem1, gem2, gem3, { color1, color2, color3 }, hasBuckle }
-    local enchantId = 0
-    local gem1, gem2, gem3 = 0, 0, 0
-    local gemColors = { nil, nil, nil }
-    local hasBuckle = false
-
-    SocketInventoryItem(0) -- placeholder; real code uses inventory bag/slot below
-    CloseSocketInfo()
-
-    -- We rely on caller passing itemSplit already; this is a convenience for non-equip items
-    return enchantId, gem1, gem2, gem3, gemColors, hasBuckle
-end
-
 function scanGear()
     QEProfile = ""
 
