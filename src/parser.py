@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import datetime
 import time
+import warnings
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
@@ -472,6 +473,7 @@ def _parse_equipment(
     equipment = data.get("equipment", {})
     for slot_name, item in equipment.items():
         if slot_name not in slotMap:
+            warnings.warn(f"Unknown equipment slot '{slot_name}', skipping item.")
             continue
 
         fields = _normalize_item_fields(item)
@@ -668,6 +670,10 @@ def _parse_actions(
     for action in raw_actions:
         action_type_name = action["type"]
         if action_type_name not in actionMap:
+            warnings.warn(
+                f"Unknown action type '{action_type_name}' "
+                f"(action id={action.get('id')}), skipping."
+            )
             continue
 
         output.action_list += config.action_template.fill(
@@ -704,6 +710,10 @@ def _parse_macros(
     for macro in raw_macros:
         slot_num = int(macro["slot"])
         if slot_num < MACRO_MIN_SLOT:
+            warnings.warn(
+                f"Macro '{macro.get('name', '?')}' in slot {slot_num} "
+                f"is below minimum ({MACRO_MIN_SLOT}), skipping."
+            )
             continue
 
         body_lines = macro["body"].replace("@", "target=")
@@ -748,11 +758,15 @@ def _parse_glyphs(
     raw_glyphs = data.get("glyphs", [])
     for glyph in raw_glyphs:
         glyph_spell = glyph["spellID"]
-        if glyph_spell in glyphMap:
-            output.glyphs += glyphTemplate.fill(
-                glyph_slot=glyph["socket"] - 1,
-                glyph_id=glyphMap[glyph_spell],
+        if glyph_spell not in glyphMap:
+            warnings.warn(
+                f"Glyph spell {glyph_spell} not found in glyph map, skipping."
             )
+            continue
+        output.glyphs += glyphTemplate.fill(
+            glyph_slot=glyph["socket"] - 1,
+            glyph_id=glyphMap[glyph_spell],
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -957,13 +971,50 @@ def parse_file(data: Dict, exp: int) -> None:
     exp : expansion code — 0 = Vanilla, 1 = TBC, 2 = WotLK.
     """
     output = ParseOutput()
-    player = data["player"]
+
+    # -- Input validation ---------------------------------------------------
+    player = data.get("player")
+    if not player:
+        raise ValueError("Input JSON is missing the required 'player' section.")
+
+    _REQUIRED_PLAYER_FIELDS = (
+        "name",
+        "gender",
+        "class",
+        "race",
+        "level",
+        "gold",
+        "expansion",
+        "locale",
+    )
+    missing = [f for f in _REQUIRED_PLAYER_FIELDS if f not in player]
+    if missing:
+        raise ValueError(
+            f"Player data is missing required fields: {', '.join(missing)}"
+        )
+
+    char_class_raw = player["class"]
+    if char_class_raw not in classes:
+        raise ValueError(f"Unknown character class '{char_class_raw}'.")
+    if char_class_raw not in skillmap:
+        raise ValueError(
+            f"No skill mapping for class '{char_class_raw}'. "
+            "The class may need to be added to constants.skillmap."
+        )
+
+    char_race_raw = player["race"]
+    if char_race_raw not in races:
+        raise ValueError(f"Unknown character race '{char_race_raw}'.")
+    if char_race_raw not in factions:
+        raise ValueError(
+            f"No faction mapping for race '{char_race_raw}'. "
+            "The race may need to be added to constants.factions."
+        )
 
     # -- slot cache --------------------------------------------------------
     slot_cache: Dict[str, int] = {slot: 0 for slot in slots}
 
     # -- character info ----------------------------------------------------
-    char_class_raw = player["class"]
     output.class_name = char_class_raw
     armor_skill = skillmap[char_class_raw]["armor"]
     weapon_skills = skillmap[char_class_raw]["weapons"]
@@ -972,7 +1023,7 @@ def parse_file(data: Dict, exp: int) -> None:
         char_name=player["name"],
         char_gender=str(player["gender"]),
         char_class=classes[char_class_raw],
-        char_race=races[player["race"]],
+        char_race=races[char_race_raw],
         char_level=str(player["level"]),
         char_money=str(player["gold"]),
         char_expansion=str(player["expansion"]),
@@ -982,7 +1033,7 @@ def parse_file(data: Dict, exp: int) -> None:
     )
 
     # Store the race key separately for lookups in _write_pdump
-    char_info["char_race_key"] = player["race"]
+    char_info["char_race_key"] = char_race_raw
 
     # -- Default armor / weapon skills -------------------------------------
     if len(armor_skill):
