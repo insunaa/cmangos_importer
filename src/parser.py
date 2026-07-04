@@ -304,11 +304,9 @@ def parse_file(data, exp):
         if not bag_entries:
             return
 
-        # Count equipped bags (summary entries with only bag+id) to determine offset
-        bag_offset = 0
-        for entry in bag_entries:
-            if "count" not in entry and "slot" not in entry:
-                bag_offset += 1
+        # bag_offset must match the number of filled equipment slots (not bags).
+        # Equipment is parsed first, so slotCache already reflects what's equipped.
+        bag_offset = sum(1 for v in slotCache.values() if v != 0)
 
         default_gems = [{"id": 0, "matched": False}] * 3
 
