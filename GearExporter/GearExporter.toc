@@ -4,5 +4,5 @@
 ## Notes: Gear Importer for QE Live Burning Crusade
 ## Version: 3.3
 
-embeds.xml
+json_lib.lua
 gear_exporter.lua
