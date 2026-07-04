@@ -78,6 +78,7 @@ function scanGear()
     for i = 1, 19, 1 do
         local equipID = GetInventoryItemID("player", i)
         local itemLink = GetInventoryItemLink('player', i)
+        C_ItemSocketInfo.CloseSocketInfo()
 
         if equipID ~= nil then
             local itemSplit = GetItemSplit(itemLink)
@@ -91,19 +92,19 @@ function scanGear()
             local hasBuckle = false
             local gemColors = { nil, nil, nil }
             SocketInventoryItem(i)
-            for j = 1, GetNumSockets() do
-                _, _, _, _, _, _, _, _, equipLoc = GetItemInfo(itemLink)
+            for j = 1, C_ItemSocketInfo.GetNumSockets() do
+                _, _, _, _, _, _, _, _, equipLoc = C_Item.GetItemInfo(itemLink)
                 if equipLoc ~= nil and equipLoc == "INVTYPE_WAIST" then
-                    if GetSocketTypes(j) ~= nil and GetSocketTypes(j) == "Prismatic" then
+                    if C_ItemSocketInfo.GetSocketTypes(j) ~= nil and C_ItemSocketInfo.GetSocketTypes(j) == "Prismatic" then
                         hasBuckle = true
                     end
                 end
                 _, _, gemColors[j] = C_ItemSocketInfo.GetExistingSocketInfo(j)
             end
-            CloseSocketInfo()
+            C_ItemSocketInfo.CloseSocketInfo()
 
             local _, _, _, _, _, _, _,
-            _, itemEquipLoc, _, _, classID, subclassID = GetItemInfo(itemLink)
+            _, itemEquipLoc, _, _, classID, subclassID = C_Item.GetItemInfo(itemLink)
 
             if classID == 2 or classID == 4 then
                 -- Store under the slot name key — same structure as bag items
@@ -117,16 +118,13 @@ function scanGear()
                 -- Gems array (only include non-zero gems)
                 local gemArray = {}
                 if gem1 and gem1 ~= 0 then
-                    table.insert(gemArray,
-                        tostring(gem1) .. ":" .. tostring(gemColors[1] or "nil"))
+                    table.insert(gemArray, { id = gem1, matched = gemColors[1] })
                 end
                 if gem2 and gem2 ~= 0 then
-                    table.insert(gemArray,
-                        tostring(gem2) .. ":" .. tostring(gemColors[2] or "nil"))
+                    table.insert(gemArray, { id = gem2, matched = gemColors[2] })
                 end
                 if gem3 and gem3 ~= 0 then
-                    table.insert(gemArray,
-                        tostring(gem3) .. ":" .. tostring(gemColors[3] or "nil"))
+                    table.insert(gemArray, { id = gem3, matched = gemColors[3] })
                 end
                 if #gemArray > 0 then
                     data.equipment[slotNames[i]].gems = gemArray
@@ -199,17 +197,17 @@ function scanGear()
                     local gemColors = { nil, nil, nil }
 
                     C_Container.SocketContainerItem(bag, bagSlot)
-                    for j = 1, GetNumSockets() do
+                    for j = 1, C_ItemSocketInfo.GetNumSockets() do
                         local equipLoc
-                        _, _, _, _, _, _, _, _, equipLoc = GetItemInfo(itemLink)
+                        _, _, _, _, _, _, _, _, equipLoc = C_Item.GetItemInfo(itemLink)
                         if equipLoc ~= nil and equipLoc == "INVTYPE_WAIST" then
-                            if GetSocketTypes(j) ~= nil and GetSocketTypes(j) == "Prismatic" then
+                            if C_ItemSocketInfo.GetSocketTypes(j) ~= nil and C_ItemSocketInfo.GetSocketTypes(j) == "Prismatic" then
                                 hasBuckle = true
                             end
                         end
                         _, _, gemColors[j] = C_ItemSocketInfo.GetExistingSocketInfo(j)
                     end
-                    CloseSocketInfo()
+                    C_ItemSocketInfo.CloseSocketInfo()
 
                     local itemCount = C_Container.GetContainerItemInfo(bag, bagSlot)["stackCount"]
 
@@ -227,16 +225,13 @@ function scanGear()
                     -- Gems
                     local gemArray = {}
                     if gem1 and gem1 ~= 0 then
-                        table.insert(gemArray,
-                            tostring(gem1) .. ":" .. tostring(gemColors[1] or "nil"))
+                        table.insert(gemArray, { id = gem1, matched = gemColors[1] })
                     end
                     if gem2 and gem2 ~= 0 then
-                        table.insert(gemArray,
-                            tostring(gem2) .. ":" .. tostring(gemColors[2] or "nil"))
+                        table.insert(gemArray, { id = gem2, matched = gemColors[2] })
                     end
                     if gem3 and gem3 ~= 0 then
-                        table.insert(gemArray,
-                            tostring(gem3) .. ":" .. tostring(gemColors[3] or "nil"))
+                        table.insert(gemArray, { id = gem3, matched = gemColors[3] })
                     end
                     if #gemArray > 0 then
                         data.bagContents[#data.bagContents].gems = gemArray
