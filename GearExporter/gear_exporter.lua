@@ -98,7 +98,7 @@ function scanGear()
                         hasBuckle = true
                     end
                 end
-                _, _, gemColors[j] = GetExistingSocketInfo(j)
+                _, _, gemColors[j] = C_ItemSocketInfo.GetExistingSocketInfo(j)
             end
             CloseSocketInfo()
 
@@ -208,7 +208,7 @@ function scanGear()
                                 hasBuckle = true
                             end
                         end
-                        _, _, gemColors[j] = GetExistingSocketInfo(j)
+                        _, _, gemColors[j] = C_ItemSocketInfo.GetExistingSocketInfo(j)
                     end
                     CloseSocketInfo()
 
@@ -394,7 +394,25 @@ function scanGear()
     end
 
     -- ===== Serialize to JSON and display =====
-    QEProfile = toJson(data)
+    local rootKeys = {
+        "exporter_version",
+        "player",
+        "equipment",
+        "ammo",
+        "quiver",
+        "pet",
+        "bagContents",
+        "talents",
+        "actions",
+        "macros",
+        "spells",
+        "factions",
+        "quests",
+        "glyphs",
+        "achievements",
+        "skills"
+    }
+    QEProfile = toJson(data, rootKeys)
     local f = GetMainFrame(QEProfile)
     f:Show()
 end

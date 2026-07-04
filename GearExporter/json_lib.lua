@@ -25,7 +25,7 @@ local function jsonStringify(v)
     end
 end
 
-toJson = function(tbl)
+toJson = function(tbl, keyOrder)
     local out = {}
     local isArray = false
     local count = 0
@@ -55,11 +55,23 @@ toJson = function(tbl)
             end
         end
     else
-        for k, v in pairs(tbl) do
-            if v ~= nil then
-                local safeK = string.gsub(tostring(k), "\\", "\\\\")
-                safeK = string.gsub(safeK, '"', '\\"')
-                table.insert(innerParts, getIndent() .. '"' .. safeK .. '": ' .. jsonStringify(v))
+        local keys = keyOrder or nil
+        if keys then
+            for _, k in ipairs(keys) do
+                local v = tbl[k]
+                if v ~= nil then
+                    local safeK = string.gsub(tostring(k), "\\", "\\\\")
+                    safeK = string.gsub(safeK, '"', '\\"')
+                    table.insert(innerParts, getIndent() .. '"' .. safeK .. '": ' .. jsonStringify(v))
+                end
+            end
+        else
+            for k, v in pairs(tbl) do
+                if v ~= nil then
+                    local safeK = string.gsub(tostring(k), "\\", "\\\\")
+                    safeK = string.gsub(safeK, '"', '\\"')
+                    table.insert(innerParts, getIndent() .. '"' .. safeK .. '": ' .. jsonStringify(v))
+                end
             end
         end
     end
