@@ -108,7 +108,6 @@ function scanGear()
             if classID == 2 or classID == 4 then
                 -- Store under the slot name key — same structure as bag items
                 data.equipment[slotNames[i]] = {
-                    slot      = slotNames[i],
                     id        = equipID,
                     suffix    = (suffix and suffix ~= 0) and suffix or nil,
                     unique    = (suffix and suffix ~= 0) and bit.band(itemSplit[8], 65535) or nil,
