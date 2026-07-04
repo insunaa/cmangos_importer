@@ -146,7 +146,7 @@ local function collectEquipment()
             local split = parseItemLink(itemLink)
 
             -- Only store equippable items (class 2=armor, 4=weapon)
-            local classID = select(12, C_Item.GetItemInfo(itemLink))    
+            local classID = select(12, C_Item.GetItemInfo(itemLink))
             if IS_EQUIPPABLE_CLASS[classID] then
                 local hasBuckle, gemColors = scanSockets(itemLink, true, nil, i)
                 C_ItemSocketInfo.CloseSocketInfo()
@@ -159,6 +159,8 @@ local function collectEquipment()
             end
         end
     end
+
+    C_ItemSocketInfo.CloseSocketInfo()
 
     return { equipment = equipment }
 end
@@ -429,54 +431,54 @@ function GetMainFrame(text)
         return SimcFrame
     end
 
-    -- Lazy-create the frame on first use
-    local cfg = {
-        width  = 750,
-        height = 400,
-    }
+    local frameW, frameH = 750, 400
 
+    -- Base frame with built-in title bar and backdrop
     local f = CreateFrame("Frame", "SimcFrame", UIParent, "DialogBoxFrame")
     f:ClearAllPoints()
     f:SetPoint("CENTER")
-    f:SetSize(cfg.width, cfg.height)
-    f:SetBackdrop({
-        bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = "Interface\\PVPFrame\\UI-Character-PVP-Highlight",
-        edgeSize = 16,
-        insets   = { left = 8, right = 8, top = 8, bottom = 8 },
-    })
+    f:SetSize(frameW, frameH)
     f:SetMovable(true)
     f:SetClampedToScreen(true)
 
-    -- Draggable
-    f:SetScript("OnMouseDown", function(self, btn)
-        if btn == "LeftButton" then self:StartMoving() end
+    -- Make the title bar draggable.  The DialogBoxFrame template creates a title
+    -- texture at roughly y=-15..-37 from the frame top; we overlay an invisible
+    -- hitbox there so dragging works without stealing clicks from children.
+    local dragBar = CreateFrame("Button", nil, f)
+    dragBar:SetPoint("TOPLEFT", 14, -15)
+    dragBar:SetPoint("TOPRIGHT", -14, -15)
+    dragBar:SetHeight(22)
+    dragBar:RegisterForClicks("LeftButtonUp")
+    dragBar:SetScript("OnMouseDown", function(self, btn)
+        if btn == "LeftButton" then f:StartMoving() end
     end)
-    f:SetScript("OnMouseUp", function() end)
+    dragBar:SetScript("OnMouseUp", function()
+        f:StopMovingOrSizing()
+    end)
 
     -- Scrollable text area
     local sf = CreateFrame("ScrollFrame", "SimcScrollFrame", f, "UIPanelScrollFrameTemplate")
-    sf:SetPoint("LEFT", 16, 0)
-    sf:SetPoint("RIGHT", -16, 0)
-    sf:SetPoint("TOP", 0, -32)
-    sf:SetPoint("BOTTOM", 0, -35)
+    sf:SetPoint("TOPLEFT", 16, -34)
+    sf:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -28, 45)
 
-    local eb = CreateFrame("EditBox", "SimcEditBox", SimcScrollFrame)
-    eb:SetSize(sf:GetWidth(), sf:GetHeight())
+    local eb = CreateFrame("EditBox", "SimcEditBox", sf)
     eb:SetMultiLine(true)
     eb:SetAutoFocus(true)
     eb:SetFontObject("ChatFontNormal")
+    eb:SetMaxLetters(0)
+    eb:SetTextInsets(4, 4, 4, 4)
     eb:SetScript("OnEscapePressed", function() f:Hide() end)
     sf:SetScrollChild(eb)
 
-    -- Resizable
+    -- Resize handle in the bottom-right corner
     f:SetResizable(true)
-    local rb = CreateFrame("Button", "SimcResizeButton", f)
+    local rb = CreateFrame("Button", nil, f)
     rb:SetPoint("BOTTOMRIGHT", -6, 7)
     rb:SetSize(16, 16)
     rb:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
     rb:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
     rb:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    rb:RegisterForClicks("LeftButtonUp")
     rb:SetScript("OnMouseDown", function(self, btn)
         if btn == "LeftButton" then
             f:StartSizing("BOTTOMRIGHT")
@@ -486,7 +488,12 @@ function GetMainFrame(text)
     rb:SetScript("OnMouseUp", function(self)
         f:StopMovingOrSizing()
         self:GetHighlightTexture():Show()
-        eb:SetWidth(sf:GetWidth())
+        eb:SetWidth(sf:GetWidth() - 16) -- account for scrollbar width
+    end)
+
+    -- On frame resize, keep the editbox width correct.
+    f:SetScript("OnSizeChanged", function()
+        eb:SetWidth(sf:GetWidth() - 16)
     end)
 
     SimcFrame = f
