@@ -1,58 +1,67 @@
 import datetime
-import math
 import time
 
 from src.constants import *
 
 
-def clean(mystr, chars_to_remove=("\n",)):
-    return "".join([e for e in mystr if e not in chars_to_remove])
+def _pad_gems(raw_gems):
+    """Normalize gem data from JSON (list of dicts) to the internal format:
+    exactly 3 entries, each a dict with 'id' (int) and 'matched' (bool).
+    Missing gems become id=0, matched=False.
+    """
+    result = [{"id": 0, "matched": False}] * 3
+    for i, gem in enumerate(raw_gems):
+        if i < 3:
+            result[i] = {"id": int(gem["id"]), "matched": bool(gem["matched"])}
+    return result
 
 
-def parse_file(f, exp):
+def parse_file(data, exp):
     slotCache = {}
     for slot in slots:
         slotCache[slot] = 0
 
-    def get_char_info():
-        global skills, class_name
-        char = f[3].split("=")
-        char_class = char[0]
-        class_name = char_class
-        char_race = clean(f[5].split("=")[1])
-        armor_skill = skillmap[char_class]["armor"]
-        weapon_skills = skillmap[char_class]["weapons"]
+    player = data["player"]
 
-        result = dict(
-            char_name=clean(char[1], ["\n", '"']),
-            char_gender=clean(f[6].split("=")[1]),
-            char_class=classes[char_class],
-            char_race=races[char_race],
-            char_level=clean(f[4].split("=")[1]),
-            char_money=clean(f[14].split("=")[1]),
-            char_expansion=clean(f[13].split("=")[1]),
-            char_locale=clean(f[15].split("=")[1]),
-            char_health=10000,
-            char_power=0,
+    # ---------------------------------------------------------------------
+    # Character info
+    # ---------------------------------------------------------------------
+    global skills, class_name
+    char_class = player["class"]
+    class_name = char_class
+    char_race = player["race"]
+    armor_skill = skillmap[char_class]["armor"]
+    weapon_skills = skillmap[char_class]["weapons"]
+
+    char_info = dict(
+        char_name=player["name"],
+        char_gender=str(player["gender"]),
+        char_class=classes[char_class],
+        char_race=races[char_race],
+        char_level=str(player["level"]),
+        char_money=str(player["gold"]),
+        char_expansion=str(player["expansion"]),
+        char_locale=player["locale"],
+        char_health=10000,
+        char_power=0,
+    )
+
+    if len(armor_skill):
+        skills += skillsTemplate.fill(
+            skill_id=armor_skill[0],
+            current_skill=1,
+            max_skill=1,
+        )
+    for weaponSkill in weapon_skills:
+        skills += skillsTemplate.fill(
+            skill_id=weaponSkill,
+            current_skill=int(char_info["char_level"]) * 5,
+            max_skill=int(char_info["char_level"]) * 5,
         )
 
-        if len(armor_skill):
-            skills += skillsTemplate.fill(
-                skill_id=armor_skill[0],
-                current_skill=1,
-                max_skill=1,
-            )
-        for weaponSkill in weapon_skills:
-            skills += skillsTemplate.fill(
-                skill_id=weaponSkill,
-                current_skill=int(result["char_level"]) * 5,
-                max_skill=int(result["char_level"]) * 5,
-            )
-
-        exp = clean(f[13].split("=")[1])
-
-        return result
-
+    # ---------------------------------------------------------------------
+    # add_to_itemlists — adapted for gem dicts
+    # ---------------------------------------------------------------------
     def add_to_itemlists(
         slot_id,
         item_entry,
@@ -104,8 +113,11 @@ def parse_file(f, exp):
                 item_entry=item_entry,
                 bag_id=bag_id,
             )
-        sockets = [gems[0].split(":")[1], gems[1].split(":")[1], gems[2].split(":")[1]]
+
+        matched = [gems[0]["matched"], gems[1]["matched"], gems[2]["matched"]]
+        gem_ids = [gems[0]["id"], gems[1]["id"], gems[2]["id"]]
         suffix = abs(int(suffix))
+
         enchantments = ""
         if exp == 0:
             if str(suffix) in suffixTable2:
@@ -127,16 +139,14 @@ def parse_file(f, exp):
                     main_enchant=enchant, enchant_1=0, enchant_2=0, enchant_3=0
                 )
         elif exp == 1:
-            if "false" not in sockets and "true" in sockets:
+            if False not in matched and True in matched:
                 socketBonus = itemSocketBonusMap[int(item_entry)]
-            #            if str(suffix) not in suffixTable:
-            #                suffix = 0
             if str(suffix) in suffixTable:
                 enchantments = instanceEnchantTemplateTBC.fill(
                     main_enchant=enchant,
-                    gem1=gemPropertyMap[gemIDPropertyMap[int(gems[0].split(":")[0])]],
-                    gem2=gemPropertyMap[gemIDPropertyMap[int(gems[1].split(":")[0])]],
-                    gem3=gemPropertyMap[gemIDPropertyMap[int(gems[2].split(":")[0])]],
+                    gem1=gemPropertyMap[gemIDPropertyMap[int(gem_ids[0])]],
+                    gem2=gemPropertyMap[gemIDPropertyMap[int(gem_ids[1])]],
+                    gem3=gemPropertyMap[gemIDPropertyMap[int(gem_ids[2])]],
                     socket_bonus=socketBonus,
                     enchant_1=suffixTable[str(suffix)][0],
                     enchant_2=suffixTable[str(suffix)][1],
@@ -145,9 +155,9 @@ def parse_file(f, exp):
             else:
                 enchantments = instanceEnchantTemplateTBC.fill(
                     main_enchant=enchant,
-                    gem1=gemPropertyMap[gemIDPropertyMap[int(gems[0].split(":")[0])]],
-                    gem2=gemPropertyMap[gemIDPropertyMap[int(gems[1].split(":")[0])]],
-                    gem3=gemPropertyMap[gemIDPropertyMap[int(gems[2].split(":")[0])]],
+                    gem1=gemPropertyMap[gemIDPropertyMap[int(gem_ids[0])]],
+                    gem2=gemPropertyMap[gemIDPropertyMap[int(gem_ids[1])]],
+                    gem3=gemPropertyMap[gemIDPropertyMap[int(gem_ids[2])]],
                     socket_bonus=socketBonus,
                     enchant_1=suffixTable[str(suffix)][0],
                     enchant_2=suffixTable[str(suffix)][1],
@@ -155,8 +165,8 @@ def parse_file(f, exp):
                 )
         elif exp == 2:
             if (
-                "false" not in sockets
-                and "true" in sockets
+                False not in matched
+                and True in matched
                 and int(item_entry) in itemSocketBonusMapWotlk
             ):
                 socketBonus = itemSocketBonusMapWotlk[int(item_entry)]
@@ -165,15 +175,9 @@ def parse_file(f, exp):
             if buckle == "false":
                 enchantments = instanceEnchantTemplateWOTLK.fill(
                     main_enchant=enchant,
-                    gem1=gemPropertyMapWotLK[
-                        gemIDPropertyMapWotlk[int(gems[0].split(":")[0])]
-                    ],
-                    gem2=gemPropertyMapWotLK[
-                        gemIDPropertyMapWotlk[int(gems[1].split(":")[0])]
-                    ],
-                    gem3=gemPropertyMapWotLK[
-                        gemIDPropertyMapWotlk[int(gems[2].split(":")[0])]
-                    ],
+                    gem1=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gem_ids[0])]],
+                    gem2=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gem_ids[1])]],
+                    gem3=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gem_ids[2])]],
                     socket_bonus=socketBonus,
                     enchant_1=suffixTable[str(suffix)][0],
                     enchant_2=suffixTable[str(suffix)][1],
@@ -182,20 +186,15 @@ def parse_file(f, exp):
             else:
                 enchantments = instanceEnchantTemplateWOTLK.fill(
                     main_enchant=enchant,
-                    gem1=gemPropertyMapWotLK[
-                        gemIDPropertyMapWotlk[int(gems[0].split(":")[0])]
-                    ],
-                    gem2=gemPropertyMapWotLK[
-                        gemIDPropertyMapWotlk[int(gems[1].split(":")[0])]
-                    ],
-                    gem3=gemPropertyMapWotLK[
-                        gemIDPropertyMapWotlk[int(gems[2].split(":")[0])]
-                    ],
+                    gem1=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gem_ids[0])]],
+                    gem2=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gem_ids[1])]],
+                    gem3=gemPropertyMapWotLK[gemIDPropertyMapWotlk[int(gem_ids[2])]],
                     socket_bonus=socketBonus,
                     enchant_1=3729,
                     enchant_2=suffixTable[str(suffix)][1],
                     enchant_3=suffixTable[str(suffix)][2],
                 )
+
         if exp == 0:
             instance_list += instanceTemplate.fill(
                 item_guid=itemguiditr,
@@ -222,200 +221,146 @@ def parse_file(f, exp):
             )
         itemguiditr += 2
 
-    def parse_slots_equipped():
-        def parse_slots_base():
-            item_info = f[i + equip_offset].split(",")
-            suffix = "0"
-            enchant = "0"
-            gems = []
-            buckle = "false"
-            if len(item_info) == 9:
-                suffix = item_info[2].split("=")[1]
-                enchant = item_info[4].split("=")[1]
-                gems = [
-                    item_info[5].split("=")[1],
-                    item_info[6].split("=")[1],
-                    item_info[7].split("=")[1],
-                ]
-                buckle = [item_info[8].split("=")[1]]
-            elif len(item_info) == 7:
-                enchant = item_info[2].split("=")[1]
-                gems = [
-                    item_info[3].split("=")[1],
-                    item_info[4].split("=")[1],
-                    item_info[5].split("=")[1],
-                ]
-                buckle = [item_info[6].split("=")[1]]
-
-            item_entry = (
-                f[i + equip_offset].split("=")[2].split(",")[0].replace("\n", "")
+    # ---------------------------------------------------------------------
+    # Equipment
+    # ---------------------------------------------------------------------
+    def parse_equipment():
+        equipment = data.get("equipment", {})
+        for slot_name, item in equipment.items():
+            if slot_name not in slotMap:
+                continue
+            suffix = str(item.get("suffix", 0)) or "0"
+            enchant = str(item.get("enchantId", 0)) or "0"
+            raw_gems = item.get("gems")
+            gems = (
+                _pad_gems(raw_gems) if raw_gems else [{"id": 0, "matched": False}] * 3
             )
+            buckle = (
+                str(item.get("buckle", False)).lower()
+                if item.get("buckle") is not None
+                else "false"
+            )
+
             add_to_itemlists(
-                slotMap[slot],
-                item_entry,
+                slotMap[slot_name],
+                item["id"],
                 suffix,
                 enchant,
                 gems,
-                buckle[0].rstrip(),
+                buckle,
                 worn=True,
             )
-            slotCache[slot] = item_entry
+            slotCache[slot_name] = item["id"]
 
-        for slot in slots:
-            for i in range(19):
-                if slot not in (f[i + equip_offset]):
-                    continue
-                parse_slots_base()
-
+    # ---------------------------------------------------------------------
+    # Hunter pet
+    # ---------------------------------------------------------------------
     def parse_pet():
         if char_info["char_class"] != classes["hunter"]:
             return
         global pet_list
-        petFamily = 0
-        petHealth = 30000
-        petPower = 100
+        pet_data = data.get("pet")
+        if not pet_data:
+            return
         modelId = 706
-        for i in range(equip_offset, 40):
-            if "pet" in f[i]:
-                petInfo = f[i].split(",")
-                petName = clean(petInfo[0].split("=")[1])
-                petLevel = clean(petInfo[1].split("=")[1])
-                petEntry = clean(petInfo[2].split("=")[1])
-                if len(petInfo) == 6:
-                    petFamily = clean(petInfo[3].split("=")[1])
-                    modelId = genericPetModelMap[petFamily]
-                    petHealth = clean(petInfo[4].split("=")[1])
-                    petPower = clean(petInfo[5].split("=")[1])
-                if exp < 2:
-                    pet_list = petTemplate.fill(
-                        no_char_guid=True,
-                        pet_entry=petEntry,
-                        pet_owner=char_guid,
-                        pet_name=petName,
-                        pet_level=petLevel,
-                        pet_model=modelId,
-                        pet_health=petHealth,
-                        pet_resource=petPower,
-                    )
-                else:
-                    pet_list = petTemplateWotLK.fill(
-                        no_char_guid=True,
-                        pet_entry=petEntry,
-                        pet_owner=char_guid,
-                        pet_name=petName,
-                        pet_level=petLevel,
-                        pet_model=modelId,
-                        pet_health=petHealth,
-                        pet_resource=petPower,
-                    )
-                break
+        petHealth = int(pet_data.get("health", 30000))
+        petPower = int(pet_data.get("power", 100))
+        family_name = pet_data.get("family")
+        if family_name and family_name in genericPetModelMap:
+            modelId = genericPetModelMap[family_name]
 
-    def get_all_items():
-        all_items = dict(
-            # [header, start, end, file lines]
-            gear=["GEAR FROM BAG", 0, 0, []],
-            talents=["TALENTS", 0, 0, []],
-            actions=["ACTIONS", 0, 0, []],
-            macros=["MACROS", 0, 0, []],
-            spells=["SPELLS", 0, 0, []],
-            factions=["FACTIONS", 0, 0, []],
-            quests=["QUESTS", 0, 0, []],
-            glyphs=["GLYPHS", 0, 0, []],
-            achievements=["ACHIEVEMENTS", 0, 0, []],
-            cskills=["SKILLS", 0, len(f) - 2, []],
-        )
-        previous_k = ""
-        for k, v in all_items.items():
-            for line in f:
-                all_items[k][1] += 1
-                if v[0] in line:
-                    if previous_k:
-                        all_items[previous_k][2] = all_items[k][1]
-                    previous_k = k
-                    break
-        for k, v in all_items.items():
-            for i in range(v[1], v[2] - 1):
-                text = f[i].rstrip("\n")
-                if text:
-                    v[3].append(text)
+        petEntry = str(pet_data["id"])
+        petName = pet_data["name"]
+        petLevel = str(pet_data["level"])
 
-        return all_items
+        if exp < 2:
+            pet_list = petTemplate.fill(
+                no_char_guid=True,
+                pet_entry=petEntry,
+                pet_owner=char_guid,
+                pet_name=petName,
+                pet_level=petLevel,
+                pet_model=modelId,
+                pet_health=petHealth,
+                pet_resource=petPower,
+            )
+        else:
+            pet_list = petTemplateWotLK.fill(
+                no_char_guid=True,
+                pet_entry=petEntry,
+                pet_owner=char_guid,
+                pet_name=petName,
+                pet_level=petLevel,
+                pet_model=modelId,
+                pet_health=petHealth,
+                pet_resource=petPower,
+            )
 
-    def parse_bag(all_items):
-        def parse_bag_base(bag_offset):
-            suffix = "0"
-            enchant = "0"
-            gems = []
-            buckle = "false"
-            item_data = item.split(",")
-            item_count = ""
-            item_entry = item_data[2].split("=")
-            if len(item_entry) > 1:
-                item_entry = item_entry[1]
-            if len(item_data) > 1:
-                item_count = clean(item_data[3].split("=")[1])
-            if len(item_data) == 11:
-                item_count = clean(item_data[5].split("=")[1])
-                suffix = item_data[3].split("=")[1]
-                enchant = item_data[6].split("=")[1]
-                gems = [
-                    item_data[7].split("=")[1],
-                    item_data[8].split("=")[1],
-                    item_data[9].split("=")[1],
-                ]
-                buckle = [item_data[10].split("=")[1]]
-            if len(item_data) == 9:
-                enchant = item_data[4].split("=")[1]
-                gems = [
-                    item_data[5].split("=")[1],
-                    item_data[6].split("=")[1],
-                    item_data[7].split("=")[1],
-                ]
-                buckle = [item_data[8].split("=")[1]]
-            slotID = str(int(item_data[1].split("=")[1]) - 1)
-            bagID = item_data[0].split("=")[1]
-            if int(bagID) == 0:
-                str(int(slotID) + 1)
+    # ---------------------------------------------------------------------
+    # Bag contents
+    # ---------------------------------------------------------------------
+    def parse_bag_contents():
+        bag_entries = data.get("bagContents", [])
+        if not bag_entries:
+            return
+
+        # Count equipped bags (summary entries with only bag+id) to determine offset
+        bag_offset = 0
+        for entry in bag_entries:
+            if "count" not in entry and "slot" not in entry:
+                bag_offset += 1
+
+        default_gems = [{"id": 0, "matched": False}] * 3
+
+        for item in bag_entries:
+            # Summary entries (equipped bags) — only bag + id
+            if "count" not in item and "slot" not in item:
+                slot_id = int(item["bag"]) + 18
+                add_to_itemlists(
+                    slot_id,
+                    item["id"],
+                    suffix=0,
+                    enchant=0,
+                    bag_id=0,
+                    gems=default_gems,
+                    buckle="false",
+                    bagno=0,
+                )
+                continue
+
+            bag_id = str(item["bag"])
+            slot_id = str(int(item["slot"]) - 1)
+            item_count = item.get("count", 1)
+            suffix = str(item.get("suffix", 0)) or "0"
+            enchant = str(item.get("enchantId", 0)) or "0"
+            raw_gems = item.get("gems")
+            gems = _pad_gems(raw_gems) if raw_gems else default_gems
+            buckle_val = item.get("buckle")
+            buckle = str(buckle_val).lower() if buckle_val is not None else "false"
+
             add_to_itemlists(
-                slotID,
-                item_entry,
+                slot_id,
+                item["id"],
                 suffix,
                 enchant,
                 gems,
-                buckle[0],
-                bagID,
+                buckle,
+                bag_id=bag_id,
                 item_count=item_count,
                 bag_offset=bag_offset,
             )
 
-        bag_offset = 0
-        for slot in slots:
-            for i in range(19):
-                if slot in (f[i + equip_offset]):
-                    bag_offset += 1
-        for item in all_items["gear"][3]:
-            if "=" not in item and "," in item:
-                slot = int(item.split(",")[0]) + 18
-                iid = int(item.split(",")[1])
-                add_to_itemlists(
-                    slot,
-                    iid,
-                    suffix=0,
-                    enchant=0,
-                    bag_id=0,
-                    gems=["0:nil", "0:nil", "0:nil"],
-                    buckle="false",
-                    bagno=0,
-                )
-            else:
-                parse_bag_base(bag_offset)
-
-    def parse_spells(all_items):
-        global skills, spells, action_list, faction_list, talents
+    # ---------------------------------------------------------------------
+    # Spells
+    # ---------------------------------------------------------------------
+    def parse_spells():
+        global spells, skills
         spellList = []
-        if exp > 0 and str(34093) not in all_items["spells"][3]:
+        raw_spells = data.get("spells", [])
+        if exp > 0 and 34093 not in raw_spells:
             spells += spellTemplate.fill(spell_id=34093)
-        for spell in all_items["spells"][3]:
+            spellList.append(34093)
+        for spell in raw_spells:
             spell = int(spell)
             if spell == 348700:
                 spell = 31892
@@ -426,7 +371,7 @@ def parse_file(f, exp):
             if exp == 0 and spell in ridingSpellMap:
                 riding_skill = 75
                 riding_spell = 33388
-                if char_info["char_level"] == 60:
+                if char_info["char_level"] == "60":
                     riding_skill = 150
                     riding_spell = 33391
                 skills += skillsTemplate.fill(
@@ -439,36 +384,36 @@ def parse_file(f, exp):
                     spellList.append(riding_spell)
             spellList.append(spell)
             spells += spellTemplate.fill(spell_id=spell)
-            if exp > 1:
-                for index in range(len(talentArray)):
-                    talent = talentArray[index]
-                    if int(talent["r0"]) == spell:
-                        talents += talentTemplate.fill(
-                            talent_id=talent["id"], current_rank=0
-                        )
-                    elif int(talent["r1"]) == spell:
-                        talents += talentTemplate.fill(
-                            talent_id=talent["id"], current_rank=1
-                        )
-                    elif int(talent["r2"]) == spell:
-                        talents += talentTemplate.fill(
-                            talent_id=talent["id"], current_rank=2
-                        )
-                    elif int(talent["r3"]) == spell:
-                        talents += talentTemplate.fill(
-                            talent_id=talent["id"], current_rank=3
-                        )
-                    elif int(talent["r4"]) == spell:
-                        talents += talentTemplate.fill(
-                            talent_id=talent["id"], current_rank=4
-                        )
 
-        for action in all_items["actions"][3]:
-            actionInfo = action.split(",")
-            slot = actionInfo[0].split("=")[1]
-            actiontype = actionInfo[1].split("=")[1]
-            actionId = actionInfo[2].split("=")[1].replace("\n", "")
-            slot = int(slot) - 1
+    # ---------------------------------------------------------------------
+    # Talents (from JSON, only for WotLK+)
+    # ---------------------------------------------------------------------
+    def parse_talents():
+        global talents
+        raw_talents = data.get("talents", [])
+        if exp < 2:
+            return
+        for talent in raw_talents:
+            rank = talent["rank"]
+            if rank == 0:
+                continue
+            talents += talentTemplate.fill(
+                talent_id=talent["id"],
+                current_rank=rank,
+            )
+
+    # ---------------------------------------------------------------------
+    # Actions
+    # ---------------------------------------------------------------------
+    def parse_actions():
+        global action_list
+        raw_actions = data.get("actions", [])
+        for action in raw_actions:
+            slot = int(action["slot"]) - 1
+            actiontype = action["type"]
+            actionId = str(action["id"])
+            if actiontype not in actionMap:
+                continue
             if exp != 2:
                 action_list += actionTemplate.fill(
                     slot_id=slot,
@@ -482,108 +427,93 @@ def parse_file(f, exp):
                     action_type=actionMap[actiontype],
                 )
 
-        for faction in all_items["factions"][3]:
-            factionInfo = faction.split(",")
-            factionId = factionInfo[0]
-            factionStanding = factionInfo[1]
+    # ---------------------------------------------------------------------
+    # Factions
+    # ---------------------------------------------------------------------
+    def parse_factions():
+        global faction_list
+        raw_factions = data.get("factions", [])
+        for faction in raw_factions:
             faction_list += factionTemplate.fill(
-                faction_id=factionId,
-                faction_standing=factionStanding,
+                faction_id=faction["factionID"],
+                faction_standing=faction["earnedValue"],
             )
 
+    # ---------------------------------------------------------------------
+    # Macros
+    # ---------------------------------------------------------------------
     def parse_macros():
-        macroArrayArray = []
-        miniMacroArray = []
-        macroCounter = 0
-        macroMeta = {}
-        for macro in all_items["macros"][3]:
-            if len(macro.split(",")) > 1:
-                macroInfo = macro.split(",")
-                if "slot" in macroInfo[0]:
-                    macroSlot = macroInfo[0].split("=")[1]
-                    macroName = macroInfo[1].split("=")[1]
-                    macroTexture = macroInfo[2].split("=")[1]
-                    macroMeta[macroSlot] = [macroName, macroTexture]
-        for macro in all_items["macros"][3]:
-            if ("---" in macro) and (macroCounter == 0):
-                macroCounter += 1
-                continue
-            if ("---" in macro) and (macroCounter > 0):
-                macroArrayArray.append(miniMacroArray)
-                miniMacroArray = []
-                macroCounter = 0
-                continue
-            if macroCounter > 0:
-                miniMacroArray.append(macro.replace("\n", "").replace("@", "target="))
-                macroCounter += 1
-                continue
-        i = 0
-        for metaMacro in macroMeta:
-            macroMeta[metaMacro].append(macroArrayArray[i])
-            i += 1
-
         macroBodies = ""
-
-        for macroSlot in macroMeta:
-            if int(macroSlot) < 100:
+        raw_macros = data.get("macros", [])
+        for macro in raw_macros:
+            slot_num = int(macro["slot"])
+            if slot_num < 100:
                 continue
-            fullMacro = macroMeta[macroSlot]
-            macroBody = ""
-            for bodyPart in fullMacro[2]:
-                macroBody += bodyPart + "\n"
-            macroBody = macroBody.rstrip("\n")
-            actualBody = singleMacroTemplate.fill(
-                macro_guid=16777216 + int(macroSlot) - 120,
-                macro_body=macroBody,
-                macro_name=fullMacro[0],
+            body_lines = macro["body"].replace("@", "target=")
+            actual_body = singleMacroTemplate.fill(
+                macro_guid=16777216 + slot_num - 120,
+                macro_body=body_lines,
+                macro_name=macro["name"],
             )
-            macroBodies += actualBody
+            macroBodies += actual_body
         write_macros(macroBodies)
 
+    # ---------------------------------------------------------------------
+    # Quests
+    # ---------------------------------------------------------------------
     def parse_quests():
         global quests
-        for quest in all_items["quests"][3]:
-            quest_id = int(quest)
+        raw_quests = data.get("quests", [])
+        for quest_id in raw_quests:
             if exp > 1:
                 quests += questTemplateWotLK.fill(quest_id=quest_id)
             else:
                 quests += questTemplate.fill(quest_id=quest_id)
 
+    # ---------------------------------------------------------------------
+    # Glyphs (Cataclysm only)
+    # ---------------------------------------------------------------------
     def parse_glyphs():
         global glyphs
-        for glyph in all_items["glyphs"][3]:
-            glyphslot = int(glyph.split(",")[0])
-            glyphspell = glyph.split(",")[1]
+        raw_glyphs = data.get("glyphs", [])
+        for glyph in raw_glyphs:
+            glyphspell = glyph["spellID"]
             if glyphspell in glyphMap:
                 glyphs += glyphTemplate.fill(
-                    glyph_slot=glyphslot - 1, glyph_id=glyphMap[glyphspell]
+                    glyph_slot=glyph["socket"] - 1,
+                    glyph_id=glyphMap[glyphspell],
                 )
 
+    # ---------------------------------------------------------------------
+    # Achievements (Cataclysm only)
+    # ---------------------------------------------------------------------
     def parse_achievements():
         global achievements
-        for achievement in all_items["achievements"][3]:
-            if "," in achievement:
-                achId = achievement.split(",")[0]
-                year = int(achievement.split(",")[1])
-                month = int(achievement.split(",")[2])
-                day = int(achievement.split(",")[3])
-                date_time = datetime.datetime(year + 2000, month, day, 0, 0)
-                timestamp = time.mktime(date_time.timetuple())
-                achievements += achievementTemplate.fill(
-                    achievement_id=achId, timestamp=timestamp
-                )
+        raw_achievements = data.get("achievements", [])
+        for ach in raw_achievements:
+            date_time = datetime.datetime(
+                ach["year"] + 2000, ach["month"], ach["day"], 0, 0
+            )
+            timestamp = time.mktime(date_time.timetuple())
+            achievements += achievementTemplate.fill(
+                achievement_id=ach["id"],
+                timestamp=timestamp,
+            )
 
+    # ---------------------------------------------------------------------
+    # Skills
+    # ---------------------------------------------------------------------
     def parse_skills():
         global cskills
         locale = char_info["char_locale"]
         if locale not in vanillaSkillMap and locale not in tbcSkillMap:
             print("Your client's language is not currently supported for skill export")
             return
-        for skill in all_items["cskills"][3]:
-            splits = skill.split(";")
-            skillName = splits[0]
-            skillRank = int(splits[1])
-            maxRank = int(splits[1])
+        raw_skills = data.get("skills", [])
+        for skill in raw_skills:
+            skillName = skill["name"]
+            skillRank = int(skill["rank"])
+            maxRank = int(skill["maxRank"])
             skill_id = 0
             if exp == 0:
                 if skillName in duplicateSkills:
@@ -608,13 +538,15 @@ def parse_file(f, exp):
                 max_skill=maxRank,
             )
 
+    # ---------------------------------------------------------------------
+    # Write SQL output
+    # ---------------------------------------------------------------------
     def write_pdump(char_info):
-        startPos = startPosMap[exp][factions[clean(f[5].split("=")[1])]]
+        start_pos = startPosMap[exp][factions[player["race"]]]
         version = ""
-        charactersRow = ""
+        characters_row = ""
         enchantments = ""
-        textIns = ""
-        equipmentCache = equipmentTemplate.fill(
+        equipment_cache = equipmentTemplate.fill(
             head=slotCache["head"],
             neck=slotCache["neck"],
             shoulder=slotCache["shoulder"],
@@ -638,13 +570,13 @@ def parse_file(f, exp):
                 main_enchant=0, enchant_1=0, enchant_2=0, enchant_3=0
             )
             bagId = 14156
-            charactersRow = charactersTemplateVan.fill(
+            characters_row = charactersTemplateVan.fill(
                 **char_info,
-                pos_x=startPos[0],
-                pos_y=startPos[1],
-                pos_z=startPos[2],
-                start_map=startPos[3],
-                equipmentCache=equipmentCache,
+                pos_x=start_pos[0],
+                pos_y=start_pos[1],
+                pos_z=start_pos[2],
+                start_map=start_pos[3],
+                equipmentCache=equipment_cache,
             )
         elif exp == 1:
             version = "required_s2473_01_characters_item_instance_text_id_fix"
@@ -658,13 +590,13 @@ def parse_file(f, exp):
                 enchant_2=0,
                 enchant_3=0,
             )
-            charactersRow = charactersTemplateTBC.fill(
+            characters_row = charactersTemplateTBC.fill(
                 **char_info,
-                pos_x=startPos[0],
-                pos_y=startPos[1],
-                pos_z=startPos[2],
-                start_map=startPos[3],
-                equipmentCache=equipmentCache,
+                pos_x=start_pos[0],
+                pos_y=start_pos[1],
+                pos_z=start_pos[2],
+                start_map=start_pos[3],
+                equipmentCache=equipment_cache,
             )
         else:
             version = "required_14061_01_characters_fishingSteps"
@@ -677,26 +609,25 @@ def parse_file(f, exp):
                 enchant_1=0,
                 enchant_2=0,
                 enchant_3=0,
-                equipmentCache=equipmentCache,
+                equipmentCache=equipment_cache,
             )
-            charactersRow = charactersTemplateWOTLK.fill(
+            characters_row = charactersTemplateWOTLK.fill(
                 **char_info,
-                pos_x=startPos[0],
-                pos_y=startPos[1],
-                pos_z=startPos[2],
-                start_map=startPos[3],
+                pos_x=start_pos[0],
+                pos_y=start_pos[1],
+                pos_z=start_pos[2],
+                start_map=start_pos[3],
             )
-            textIns = ", ''"
 
         result = pdumpTemplate.fill(
             bag_id=bagId,
-            characters_row=charactersRow,
+            characters_row=characters_row,
             enchantments=enchantments,
             database_version=version,
-            pos_x=startPos[0],
-            pos_y=startPos[1],
-            pos_z=startPos[2],
-            start_map=startPos[3],
+            pos_x=start_pos[0],
+            pos_y=start_pos[1],
+            pos_z=start_pos[2],
+            start_map=start_pos[3],
             skills=cskills,
             actions=action_list,
             quests=quests,
@@ -706,32 +637,31 @@ def parse_file(f, exp):
             talents=talents,
             instance_list=instance_list,
             factions=faction_list,
-            text=textIns,
+            text=", ''" if exp == 2 else "",
             glyphs=glyphs,
             achievements=achievements,
         )
 
-        randNo = datetime.datetime.now().strftime("%H%M%S")
-
-        with open(char_info["char_name"] + randNo + ".sql", "w") as writer:
+        rand_no = datetime.datetime.now().strftime("%H%M%S")
+        filename = char_info["char_name"] + rand_no + ".sql"
+        with open(filename, "w") as writer:
             writer.write(result)
-            print(
-                "Character conversion successful! Export written to: "
-                + char_info["char_name"]
-                + randNo
-                + ".sql"
-            )
+            print("Character conversion successful! Export written to: " + filename)
 
     def write_macros(macro_file):
         with open("macros-cache.txt", "w") as writer:
             writer.write(macro_file)
 
-    char_info = get_char_info()
-    parse_slots_equipped()
+    # ---------------------------------------------------------------------
+    # Main execution order
+    # ---------------------------------------------------------------------
+    parse_equipment()
     parse_pet()
-    all_items = get_all_items()
-    parse_bag(all_items)
-    parse_spells(all_items)
+    parse_bag_contents()
+    parse_spells()
+    parse_talents()
+    parse_actions()
+    parse_factions()
     parse_macros()
     parse_quests()
     parse_glyphs()

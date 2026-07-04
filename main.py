@@ -1,7 +1,8 @@
 #!/usr/bin/python3
-from string import Template
-import sys
+import json
 import os.path
+import sys
+
 from src.parser import parse_file
 
 expansion = 2
@@ -20,9 +21,9 @@ if sys.stdin and sys.stdin.isatty():
     else:
         sys.exit(1)
 else:
-    filepath = "./exported.txt"
+    filepath = "./exported.json"
 
 
 if os.path.isfile(filepath):
-    with open(filepath, encoding='utf8') as file:
-        parse_file(file.readlines(), expansion)
+    with open(filepath, encoding="utf8") as file:
+        parse_file(json.load(file), expansion)
