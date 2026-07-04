@@ -1,4 +1,4 @@
-qeVersionNum = "3.3"
+qeVersionNum = "3.4"
 QEProfile = ""
 
 local function GetItemSplit(itemLink)
