@@ -1,7 +1,3 @@
-# File outline for /home/flappy/git/cmangos_importer/src/parser.py
-# Refactored: globals → accumulator dataclass, inner functions → module-level,
-# magic numbers named, duplicated enchantment/suffix logic extracted.
-
 from __future__ import annotations
 
 import datetime
@@ -10,8 +6,6 @@ import warnings
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-# ---------------------------------------------------------------------------
-# Explicit imports from constants (replaces `from src.constants import *`)
 # ---------------------------------------------------------------------------
 from src.constants import (
     Template,
@@ -64,8 +58,6 @@ from src.constants import (
 )
 
 # ---------------------------------------------------------------------------
-# Magic numbers extracted as named constants
-# ---------------------------------------------------------------------------
 GEM_SLOTS = 3
 CHAR_GUID = 500
 ITEM_GUID_START = 10000
@@ -73,6 +65,7 @@ ITEM_GUID_INCREMENT = 2
 BAG_BASE_OFFSET = 10000
 BAG_SLOT_STRIDE = 2
 EQUIPMENT_SLOT_COUNT = 23
+BAG_EQUIP_SLOT_OFFSET = 18
 MAIN_ENCHANTS_ZERO_FILL = (0, 0, 0, 0)
 
 SPELL_GENERIC_MOUNT = 34093
@@ -86,19 +79,46 @@ SPELL_RIDE100 = 33391
 MACRO_MIN_SLOT = 100
 MACRO_GUID_BASE = 16777216
 MACRO_GUID_OFFSET = 120
+ACHIEVEMENT_YEAR_OFFSET = 2000
 
+DEFAULT_PET_MODEL = 706
 DEFAULT_BAG_ID_WOTLK_TBC = 23162
 DEFAULT_BAG_ID_VANILLA = 14156
 
 BUCKLE_ENCHANT_ID = 3729
 
+REQUIRED_PLAYER_FIELDS = (
+    "name",
+    "gender",
+    "class",
+    "race",
+    "level",
+    "gold",
+    "expansion",
+    "locale",
+)
 
-# ---------------------------------------------------------------------------
-# Per-expansion configuration
+_EQUIP_CACHE_SLOTS = (
+    ("head", "head"),
+    ("neck", "neck"),
+    ("shoulder", "shoulder"),
+    ("shirt", "shirt"),
+    ("chest", "chest"),
+    ("waist", "belt"),
+    ("legs", "legs"),
+    ("feet", "feet"),
+    ("wrist", "wrist"),
+    ("hands", "gloves"),
+    ("back", "back"),
+    ("main_hand", "mainhand"),
+    ("off_hand", "offhand"),
+    ("relic", "ranged"),
+    ("tabard", "tabard"),
+)
+
+
 # ---------------------------------------------------------------------------
 class ExpansionConfig:
-    """Groups per-expansion templates, maps and constants in one place."""
-
     def __init__(
         self,
         *,
@@ -114,6 +134,7 @@ class ExpansionConfig:
         version_sql: str,
         default_bag_id: int,
         negate_suffix: bool,
+        is_wotlk: bool = False,
     ) -> None:
         self.instance_enchant_template = instance_enchant_template
         self.instance_template = instance_template
@@ -127,6 +148,7 @@ class ExpansionConfig:
         self.version_sql = version_sql
         self.default_bag_id = default_bag_id
         self.negate_suffix = negate_suffix
+        self.is_wotlk = is_wotlk
 
 
 _EXPAN_CONFIGS: Dict[int, ExpansionConfig] = {
@@ -171,6 +193,7 @@ _EXPAN_CONFIGS: Dict[int, ExpansionConfig] = {
         version_sql="required_14061_01_characters_fishingSteps",
         default_bag_id=DEFAULT_BAG_ID_WOTLK_TBC,
         negate_suffix=True,
+        is_wotlk=True,
     ),
 }
 
@@ -180,12 +203,8 @@ def _exp_config(exp: int) -> ExpansionConfig:
 
 
 # ---------------------------------------------------------------------------
-# Accumulator — replaces all the `global` string buffers
-# ---------------------------------------------------------------------------
 @dataclass
 class ParseOutput:
-    """Holds all mutable parsing output in one place."""
-
     inventory_list: str = ""
     instance_list: str = ""
     item_guid: int = ITEM_GUID_START
@@ -203,22 +222,11 @@ class ParseOutput:
 
 
 # ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 def _default_gems() -> List[Dict[str, object]]:
-    """Return a fresh list of empty gem placeholders.
-
-    Uses a comprehension so each dict is an independent instance
-    (avoids the [dict] * N shared-reference pitfall).
-    """
     return [{"id": 0, "matched": False} for _ in range(GEM_SLOTS)]
 
 
 def _pad_gems(raw_gems: Optional[List[Dict]]) -> List[Dict[str, object]]:
-    """Normalize gem data from JSON (list of dicts) to the internal format:
-    exactly GEM_SLOTS entries, each a dict with 'id' (int) and 'matched' (bool).
-    Missing gems become id=0, matched=False.
-    """
     result = _default_gems()
     for i, gem in enumerate(raw_gems or []):
         if i < GEM_SLOTS:
@@ -227,7 +235,6 @@ def _pad_gems(raw_gems: Optional[List[Dict]]) -> List[Dict[str, object]]:
 
 
 def _normalize_item_fields(item: Dict) -> Dict[str, str]:
-    """Extract and normalize common item fields from a raw JSON item dict."""
     suffix_raw = item.get("suffix", 0)
     enchant_raw = item.get("enchantId", 0)
     buckle_raw = item.get("buckle")
@@ -240,11 +247,6 @@ def _normalize_item_fields(item: Dict) -> Dict[str, str]:
 
 
 def _lookup_suffix_enchants(suffix_str: str) -> Tuple[int, int, int]:
-    """Look up enchant IDs from suffix tables.
-
-    Tries suffixTable first, falls back to suffixTable2 for Vanilla.
-    Returns (enchant_1, enchant_2, enchant_3).
-    """
     if suffix_str in suffixTable:
         vals = suffixTable[suffix_str]
         return (vals[0], vals[1], vals[2])
@@ -258,7 +260,6 @@ def _build_enchantments_vanilla(
     enchant: str,
     suffix_str: str,
 ) -> str:
-    """Build enchantment string for Vanilla expansion."""
     e1, e2, e3 = _lookup_suffix_enchants(suffix_str)
     return instanceEnchantTemplateVan.fill(
         main_enchant=enchant,
@@ -273,7 +274,6 @@ def _resolve_socket_bonus(
     item_entry: int,
     socket_bonus_map: dict,
 ) -> int:
-    """Return socket bonus ID if all sockets are filled with at least one matched gem."""
     if False not in matched and True in matched and item_entry in socket_bonus_map:
         return socket_bonus_map[item_entry]
     return 0
@@ -284,7 +284,6 @@ def _resolve_gem_values(
     gem_id_property_map: dict,
     gem_property_map: dict,
 ) -> Tuple[int, int, int]:
-    """Look up gem property values for the three gem slots."""
     return (
         gem_property_map[gem_id_property_map[int(gem_ids[0])]],
         gem_property_map[gem_id_property_map[int(gem_ids[1])]],
@@ -301,13 +300,10 @@ def _build_enchantments_post_vanilla(
     config: ExpansionConfig,
     gem_ids: List[int],
 ) -> str:
-    """Build enchantment string for TBC and WotLK expansions."""
     socket_bonus = _resolve_socket_bonus(matched, item_entry, config.socket_bonus_map)
 
-    # WotLK: normalize missing suffix to 0
-    if config == _EXPAN_CONFIGS[2]:
-        if suffix_str not in suffixTable:
-            suffix_str = "0"
+    if config.is_wotlk and suffix_str not in suffixTable:
+        suffix_str = "0"
 
     g1, g2, g3 = _resolve_gem_values(
         gem_ids,
@@ -317,8 +313,7 @@ def _build_enchantments_post_vanilla(
 
     e1, e2, e3 = _lookup_suffix_enchants(suffix_str)
 
-    # WotLK buckle override: enchant_1 becomes the buckle enchant ID
-    if config == _EXPAN_CONFIGS[2] and buckle != "false":
+    if config.is_wotlk and buckle != "false":
         e1 = BUCKLE_ENCHANT_ID
 
     return config.instance_enchant_template.fill(
@@ -343,7 +338,6 @@ def _build_enchantments(
     config: ExpansionConfig,
     gem_ids: List[int],
 ) -> str:
-    """Dispatch to the correct enchantment builder based on expansion."""
     if exp == 0:
         return _build_enchantments_vanilla(enchant, suffix_str)
 
@@ -358,24 +352,12 @@ def _build_enchantments(
     )
 
 
-def _compute_bag_slot(
-    bag_id: str,
-    bag_offset: int,
-) -> int:
-    """Compute the bag GUID value for a bag-inventory item.
-
-    Mirrors the original ``bagMap`` dict:
-        "1": 10000 + ((bag_offset + 0) * 2),
-        "2": 10000 + ((bag_offset + 1) * 2), ...
-    i.e. BAG_BASE_OFFSET + ((bag_offset + (int(bag_id) - 1)) * BAG_SLOT_STRIDE).
-    """
+def _compute_bag_slot(bag_id: str, bag_offset: int) -> int:
     if bag_id == "0":
         return 0
     return BAG_BASE_OFFSET + ((bag_offset + int(bag_id) - 1) * BAG_SLOT_STRIDE)
 
 
-# ---------------------------------------------------------------------------
-# add_to_itemlists — promoted to module-level
 # ---------------------------------------------------------------------------
 def _add_to_itemlists(
     output: ParseOutput,
@@ -393,31 +375,8 @@ def _add_to_itemlists(
     bag_offset: int = 0,
     is_worn: bool = False,
 ) -> None:
-    """Append an item to the inventory and instance lists in *output*.
-
-    Parameters
-    ----------
-    slot_id : final slot index (after any transformation).
-    item_entry : item entry ID string.
-    suffix : numeric suffix (will be ``abs()``-ed then possibly negated).
-    enchant : main enchantment ID string.
-    gems : list of 3 gem dicts with 'id' and 'matched'.
-    buckle : "true" / "false" string for WotLK buckle handling.
-    bag_id : "0" means no bag; otherwise the bag index string.
-    item_count : stack count (default 1).
-    bag_item_mode : True for normal bag items or worn gear;
-        False for equipped-bag summary entries.  Replicates the original
-        ``bagno`` discriminator logic without using a magic threshold.
-    bag_offset : number of already-filled equipment slots (used only when
-        computing the bag GUID inside bagMap).
-    is_worn : whether the item is currently equipped.
-    """
     suffix = abs(int(suffix))
 
-    # --- Determine effective slot for inventory row -----------------------
-    # Faithful translation of the original four-branch logic that used
-    # ``bagno`` (default 5) as a discriminator.  We replace it with the
-    # explicit boolean ``bag_item_mode`` to avoid magic thresholds.
     if bag_id != "0" and bag_item_mode and not is_worn:
         inv_slot_id = slot_id
         inv_bag_id = _compute_bag_slot(bag_id, bag_offset)
@@ -430,7 +389,6 @@ def _add_to_itemlists(
     else:
         inv_slot_id = slot_id
         inv_bag_id = bag_id
-
     output.inventory_list += wornTemplate.fill(
         slot_id=inv_slot_id,
         item_guid=output.item_guid,
@@ -438,7 +396,7 @@ def _add_to_itemlists(
         bag_id=inv_bag_id,
     )
 
-    # --- Build enchantment string -----------------------------------------
+    # Build enchantment string
     config = _exp_config(exp)
     matched = [gems[0]["matched"], gems[1]["matched"], gems[2]["matched"]]
     gem_ids = [gems[0]["id"], gems[1]["id"], gems[2]["id"]]
@@ -447,7 +405,7 @@ def _add_to_itemlists(
         exp, enchant, str(suffix), matched, int(item_entry), buckle, config, gem_ids
     )
 
-    # --- Build instance row -----------------------------------------------
+    # Build instance row
     effective_suffix = -suffix if config.negate_suffix else suffix
 
     output.instance_list += config.instance_template.fill(
@@ -461,8 +419,6 @@ def _add_to_itemlists(
     output.item_guid += ITEM_GUID_INCREMENT
 
 
-# ---------------------------------------------------------------------------
-# parse_equipment — promoted to module-level
 # ---------------------------------------------------------------------------
 def _parse_equipment(
     data: Dict,
@@ -493,8 +449,6 @@ def _parse_equipment(
 
 
 # ---------------------------------------------------------------------------
-# parse_pet — promoted to module-level
-# ---------------------------------------------------------------------------
 def _parse_pet(
     data: Dict,
     char_class_id: int,
@@ -511,10 +465,11 @@ def _parse_pet(
     config = _exp_config(exp)
 
     family_name = pet_data.get("family")
-    model_id = 706
-
-    if family_name and family_name in genericPetModelMap:
-        model_id = genericPetModelMap[family_name]
+    model_id = (
+        genericPetModelMap.get(family_name, DEFAULT_PET_MODEL)
+        if family_name
+        else DEFAULT_PET_MODEL
+    )
 
     pet_list = config.pet_template.fill(
         no_char_guid=True,
@@ -531,8 +486,6 @@ def _parse_pet(
 
 
 # ---------------------------------------------------------------------------
-# parse_bag_contents — promoted to module-level
-# ---------------------------------------------------------------------------
 def _parse_bag_contents(
     data: Dict,
     output: ParseOutput,
@@ -546,9 +499,8 @@ def _parse_bag_contents(
     bag_offset = sum(1 for value in slot_cache.values() if value != 0)
 
     for item in bag_entries:
-        # Summary entries (equipped bags) — only bag + id
         if "count" not in item and "slot" not in item:
-            slot_id = int(item["bag"]) + 18
+            slot_id = int(item["bag"]) + BAG_EQUIP_SLOT_OFFSET
             fields = {"suffix": "0", "enchant": "0"}
             fields.update(
                 gems=_default_gems(),
@@ -587,8 +539,6 @@ def _parse_bag_contents(
 
 
 # ---------------------------------------------------------------------------
-# parse_spells — promoted to module-level
-# ---------------------------------------------------------------------------
 def _parse_spells(
     data: Dict,
     char_level: str,
@@ -605,7 +555,6 @@ def _parse_spells(
     for spell in raw_spells:
         spell_id = int(spell)
 
-        # Remap WotLK mount spells
         if spell_id == 348700:
             spell_id = SPELL_REMAP_348700
         elif spell_id == 348704:
@@ -614,7 +563,6 @@ def _parse_spells(
         if spell_id in seen:
             continue
 
-        # Riding skill for Vanilla
         if exp == 0 and spell_id in ridingSpellMap:
             riding_skill = RIDER_SKILL_NORMAL
             riding_spell = SPELL_RIDE60
@@ -636,8 +584,6 @@ def _parse_spells(
 
 
 # ---------------------------------------------------------------------------
-# parse_talents — promoted to module-level
-# ---------------------------------------------------------------------------
 def _parse_talents(
     data: Dict,
     output: ParseOutput,
@@ -657,8 +603,6 @@ def _parse_talents(
         )
 
 
-# ---------------------------------------------------------------------------
-# parse_actions — promoted to module-level
 # ---------------------------------------------------------------------------
 def _parse_actions(
     data: Dict,
@@ -684,8 +628,6 @@ def _parse_actions(
 
 
 # ---------------------------------------------------------------------------
-# parse_factions — promoted to module-level
-# ---------------------------------------------------------------------------
 def _parse_factions(
     data: Dict,
     output: ParseOutput,
@@ -699,12 +641,7 @@ def _parse_factions(
 
 
 # ---------------------------------------------------------------------------
-# parse_macros — promoted to module-level
-# ---------------------------------------------------------------------------
-def _parse_macros(
-    data: Dict,
-) -> str:
-    """Return the assembled macro cache content."""
+def _parse_macros(data: Dict) -> str:
     macro_bodies = ""
     raw_macros = data.get("macros", [])
     for macro in raw_macros:
@@ -724,7 +661,6 @@ def _parse_macros(
         )
         macro_bodies += actual_body
 
-    # Write to cache file (side-effect preserved from original)
     _write_macros(macro_bodies)
     return macro_bodies
 
@@ -734,8 +670,6 @@ def _write_macros(macro_file: str) -> None:
         writer.write(macro_file)
 
 
-# ---------------------------------------------------------------------------
-# parse_quests — promoted to module-level
 # ---------------------------------------------------------------------------
 def _parse_quests(
     data: Dict,
@@ -748,8 +682,6 @@ def _parse_quests(
         output.quests += config.quest_template.fill(quest_id=quest_id)
 
 
-# ---------------------------------------------------------------------------
-# parse_glyphs — promoted to module-level
 # ---------------------------------------------------------------------------
 def _parse_glyphs(
     data: Dict,
@@ -770,8 +702,25 @@ def _parse_glyphs(
 
 
 # ---------------------------------------------------------------------------
-# parse_achievements — promoted to module-level
-# ---------------------------------------------------------------------------
+def _add_default_skills(char_class: str, char_level: int, output: ParseOutput) -> None:
+    armor_skill = skillmap[char_class]["armor"]
+    weapon_skills = skillmap[char_class]["weapons"]
+    level_int = int(char_level)
+
+    if armor_skill:
+        output.skills += skillsTemplate.fill(
+            skill_id=armor_skill[0],
+            current_skill=1,
+            max_skill=1,
+        )
+    for ws in weapon_skills:
+        output.skills += skillsTemplate.fill(
+            skill_id=ws,
+            current_skill=level_int * 5,
+            max_skill=level_int * 5,
+        )
+
+
 def _parse_achievements(
     data: Dict,
     output: ParseOutput,
@@ -779,7 +728,7 @@ def _parse_achievements(
     raw_achievements = data.get("achievements", [])
     for ach in raw_achievements:
         date_time = datetime.datetime(
-            ach["year"] + 2000, ach["month"], ach["day"], 0, 0
+            ach["year"] + ACHIEVEMENT_YEAR_OFFSET, ach["month"], ach["day"], 0, 0
         )
         timestamp = time.mktime(date_time.timetuple())
         output.achievements += achievementTemplate.fill(
@@ -788,8 +737,6 @@ def _parse_achievements(
         )
 
 
-# ---------------------------------------------------------------------------
-# parse_skills (character profession/combat skills) — promoted to module-level
 # ---------------------------------------------------------------------------
 def _parse_char_skills(
     data: Dict,
@@ -804,7 +751,6 @@ def _parse_char_skills(
     raw_skills = data.get("skills", [])
     class_name = output.class_name
 
-    # Select the appropriate skill map based on expansion
     if exp == 0:
         skill_map = vanillaSkillMap.get(char_locale, {})
         map_label = "Vanilla"
@@ -838,60 +784,13 @@ def _parse_char_skills(
 
 
 # ---------------------------------------------------------------------------
-# write_pdump — promoted to module-level
-# ---------------------------------------------------------------------------
-def _write_pdump(
-    char_info: Dict[str, str],
-    slot_cache: Dict[str, int],
-    output: ParseOutput,
-    exp: int,
-) -> None:
-    config = _exp_config(exp)
-
-    start_pos = startPosMap[exp][factions[char_info["char_race_key"]]]
-    pos_x, pos_y, pos_z, start_map = (
-        start_pos[0],
-        start_pos[1],
-        start_pos[2],
-        start_pos[3],
-    )
-
-    equipment_cache = equipmentTemplate.fill(
-        head=slot_cache["head"],
-        neck=slot_cache["neck"],
-        shoulder=slot_cache["shoulder"],
-        shirt=slot_cache["shirt"],
-        chest=slot_cache["chest"],
-        belt=slot_cache["waist"],
-        legs=slot_cache["legs"],
-        feet=slot_cache["feet"],
-        wrist=slot_cache["wrist"],
-        gloves=slot_cache["hands"],
-        back=slot_cache["back"],
-        mainhand=slot_cache["main_hand"],
-        offhand=slot_cache["off_hand"],
-        ranged=slot_cache["relic"],
-        tabard=slot_cache["tabard"],
-    )
-
-    # Build zero-filled enchantment for empty slots
+def _empty_enchant(exp: int) -> str:
     if exp == 0:
-        empty_enchant = instanceEnchantTemplateVan.fill(
-            main_enchant=0,
-            enchant_1=0,
-            enchant_2=0,
-            enchant_3=0,
-        )
-        characters_row = config.characters_template.fill(
-            **char_info,
-            pos_x=pos_x,
-            pos_y=pos_y,
-            pos_z=pos_z,
-            start_map=start_map,
-            equipmentCache=equipment_cache,
+        return instanceEnchantTemplateVan.fill(
+            main_enchant=0, enchant_1=0, enchant_2=0, enchant_3=0
         )
     elif exp == 1:
-        empty_enchant = instanceEnchantTemplateTBC.fill(
+        return instanceEnchantTemplateTBC.fill(
             main_enchant=0,
             gem1=0,
             gem2=0,
@@ -901,15 +800,38 @@ def _write_pdump(
             enchant_2=0,
             enchant_3=0,
         )
-        characters_row = config.characters_template.fill(
-            **char_info,
-            pos_x=pos_x,
-            pos_y=pos_y,
-            pos_z=pos_z,
-            start_map=start_map,
-            equipmentCache=equipment_cache,
-        )
     else:
+        return instanceEnchantTemplateWOTLK.fill(
+            main_enchant=0,
+            gem1=0,
+            gem2=0,
+            gem3=0,
+            socket_bonus=0,
+            enchant_1=0,
+            enchant_2=0,
+            enchant_3=0,
+        )
+
+
+def _fill_equipment_cache(slot_cache: Dict[str, int]) -> str:
+    cache_values = {v: slot_cache[k] for k, v in _EQUIP_CACHE_SLOTS}
+    return equipmentTemplate.fill(**cache_values)
+
+
+def _write_pdump(
+    char_info: Dict[str, str],
+    slot_cache: Dict[str, int],
+    output: ParseOutput,
+    exp: int,
+) -> None:
+    config = _exp_config(exp)
+
+    start_pos = startPosMap[exp][factions[char_info["char_race_key"]]]
+    pos_x, pos_y, pos_z, start_map = start_pos
+
+    equipment_cache = _fill_equipment_cache(slot_cache)
+
+    if exp == 2:
         empty_enchant = instanceEnchantTemplateWOTLK.fill(
             main_enchant=0,
             gem1=0,
@@ -927,6 +849,16 @@ def _write_pdump(
             pos_y=pos_y,
             pos_z=pos_z,
             start_map=start_map,
+        )
+    else:
+        empty_enchant = _empty_enchant(exp)
+        characters_row = config.characters_template.fill(
+            **char_info,
+            pos_x=pos_x,
+            pos_y=pos_y,
+            pos_z=pos_z,
+            start_map=start_map,
+            equipmentCache=equipment_cache,
         )
 
     result = pdumpTemplate.fill(
@@ -960,34 +892,14 @@ def _write_pdump(
 
 
 # ---------------------------------------------------------------------------
-# Public API — parse_file (thin orchestrator)
-# ---------------------------------------------------------------------------
 def parse_file(data: Dict, exp: int) -> None:
-    """Parse a character JSON dump and write the resulting SQL file.
-
-    Parameters
-    ----------
-    data : dict with keys ``player``, ``equipment``, ``bagContents``, etc.
-    exp : expansion code — 0 = Vanilla, 1 = TBC, 2 = WotLK.
-    """
     output = ParseOutput()
 
-    # -- Input validation ---------------------------------------------------
     player = data.get("player")
     if not player:
         raise ValueError("Input JSON is missing the required 'player' section.")
 
-    _REQUIRED_PLAYER_FIELDS = (
-        "name",
-        "gender",
-        "class",
-        "race",
-        "level",
-        "gold",
-        "expansion",
-        "locale",
-    )
-    missing = [f for f in _REQUIRED_PLAYER_FIELDS if f not in player]
+    missing = [f for f in REQUIRED_PLAYER_FIELDS if f not in player]
     if missing:
         raise ValueError(
             f"Player data is missing required fields: {', '.join(missing)}"
@@ -1011,14 +923,9 @@ def parse_file(data: Dict, exp: int) -> None:
             "The race may need to be added to constants.factions."
         )
 
-    # -- slot cache --------------------------------------------------------
     slot_cache: Dict[str, int] = {slot: 0 for slot in slots}
 
-    # -- character info ----------------------------------------------------
     output.class_name = char_class_raw
-    armor_skill = skillmap[char_class_raw]["armor"]
-    weapon_skills = skillmap[char_class_raw]["weapons"]
-
     char_info: Dict[str, str] = dict(
         char_name=player["name"],
         char_gender=str(player["gender"]),
@@ -1028,28 +935,13 @@ def parse_file(data: Dict, exp: int) -> None:
         char_money=str(player["gold"]),
         char_expansion=str(player["expansion"]),
         char_locale=player["locale"],
-        char_health=10000,
-        char_power=0,
+        char_health="10000",
+        char_power="0",
     )
-
-    # Store the race key separately for lookups in _write_pdump
     char_info["char_race_key"] = char_race_raw
 
-    # -- Default armor / weapon skills -------------------------------------
-    if len(armor_skill):
-        output.skills += skillsTemplate.fill(
-            skill_id=armor_skill[0],
-            current_skill=1,
-            max_skill=1,
-        )
-    for weapon_skill in weapon_skills:
-        output.skills += skillsTemplate.fill(
-            skill_id=weapon_skill,
-            current_skill=int(char_info["char_level"]) * 5,
-            max_skill=int(char_info["char_level"]) * 5,
-        )
+    _add_default_skills(char_class_raw, char_info["char_level"], output)
 
-    # -- Main execution order ----------------------------------------------
     _parse_equipment(data, output, exp, slot_cache)
     _parse_pet(data, classes[char_class_raw], output, exp)
     _parse_bag_contents(data, output, exp, slot_cache)
