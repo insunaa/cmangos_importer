@@ -4,3 +4,5 @@
 *.csv
 *.zip
 src/__pycache__
+src/parsers/__pycache__
+src/items/__pycache__
