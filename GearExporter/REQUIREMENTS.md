@@ -46,7 +46,6 @@ The root object has the following top-level keys, **always in this order**:
   "quiver": QuiverItem | null,        // Hunter only
   "pet": PetInfo | null,             // Hunter with active pet only
   "bagContents": BagEntry[],
-  "talents": TalentEntry[],
   "actions": ActionEntry[],
   "macros": MacroEntry[],
   "spells": number[],
@@ -77,7 +76,7 @@ Key ordering is enforced by passing an explicit `rootKeys` array to `toJson()` â
 | `server` | string | Realm name (`GetRealmName`) |
 | `role` | string | Hardcoded `"N/A"` |
 | `professions` | string | Hardcoded `"N/A"` |
-| `talents` | string | Hardcoded `"N/A"` (full talent data is in the `talents` array) |
+| `talents` | string | Hardcoded `"N/A"` |
 | `spec` | string | Hardcoded `"N/A"` |
 | `expansion` | number | Expansion level (0=TBC, 1=WotLK, 2=Cata) |
 | `gold` | number | Copper amount (`GetMoney`) |
@@ -141,14 +140,6 @@ An object keyed by slot name. Each value is an **ItemRecord**. The JSON key IS t
 | `buckle` | boolean \| null | Prismatic buckle state or null |
 
 > Equipped bag entries (the first four) contain only `bag` and `id`. Full item rows from iterating bag slots contain all fields. This preserves the original behaviour where bag summaries and detailed listings coexist in one array.
-
-### TalentEntry
-
-| Field | Type | Description |
-|---|---|---|
-| `talentGroup` | number | Tab number (1-3) |
-| `id` | number | Talent index within tab |
-| `rank` | number | Current rank invested |
 
 ### ActionEntry
 
@@ -241,10 +232,7 @@ An object keyed by slot name. Each value is an **ItemRecord**. The JSON key IS t
       ]
     }
   },
-  "talents": [
-    {"talentGroup": 1, "id": 1, "rank": 3},
-    {"talentGroup": 1, "id": 2, "rank": 1}
-  ],
+
   "spells": [6199, 6544, 6693, ...],
   "bagContents": [
     {"bag": 0, "slot": 3, "id": 12345, "count": 5},

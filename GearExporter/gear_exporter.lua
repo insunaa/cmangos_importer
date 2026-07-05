@@ -238,23 +238,6 @@ local function collectBagContents()
     return { bagContents = contents }
 end
 
-local function collectTalents()
-    local expansion = GetExpansionLevel()
-    if expansion ~= 2 then return {} end
-    local talents = {}
-    for t = 1, 3 do
-        for i = 1, GetNumTalents(t) do
-            local _, _, _, _, currRank = GetTalentInfo(t, i)
-            table.insert(talents, {
-                talentGroup = t,
-                id          = i,
-                rank        = currRank,
-            })
-        end
-    end
-    return { talents = talents }
-end
-
 local function collectActions()
     local actions = {}
     for i = 1, NUM_ACTION_SLOTS do
@@ -404,7 +387,6 @@ function scanGear()
         collectAmmo(),
         collectHunterData(),
         collectBagContents(),
-        collectTalents(),
         collectActions(),
         collectMacros(),
         collectSpells(),
@@ -417,7 +399,7 @@ function scanGear()
 
     local rootKeys = {
         "exporter_version", "player", "equipment", "ammo", "quiver", "pet",
-        "bagContents", "talents", "actions", "macros", "spells", "factions",
+        "bagContents", "actions", "macros", "spells", "factions",
         "quests", "glyphs", "achievements", "skills"
     }
     QEProfile = toJson(data, rootKeys)
