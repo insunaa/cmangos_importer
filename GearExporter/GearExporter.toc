@@ -2,7 +2,7 @@
 ## Title: Character Exporter
 ## Author: insunaa
 ## Notes: Gear Importer for QE Live Burning Crusade
-## Version: 3.3
+## Version: 3.5
 
 json_lib.lua
 gear_exporter.lua

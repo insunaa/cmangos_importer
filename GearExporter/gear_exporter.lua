@@ -2,7 +2,7 @@
 -- Constants
 --------------------------------------------------------------------------------
 
-local VERSION             = "3.4"
+local VERSION             = "3.5"
 local NUM_EQUIP_SLOTS     = 19
 local NUM_ACTION_SLOTS    = 120
 local NUM_MACRO_SLOTS     = 138
