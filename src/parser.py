@@ -62,8 +62,6 @@ GEM_SLOTS = 3
 CHAR_GUID = 500
 ITEM_GUID_START = 10000
 ITEM_GUID_INCREMENT = 2
-BAG_BASE_OFFSET = 10000
-BAG_SLOT_STRIDE = 2
 EQUIPMENT_SLOT_COUNT = 23
 BAG_EQUIP_SLOT_OFFSET = 18
 MAIN_ENCHANTS_ZERO_FILL = (0, 0, 0, 0)
@@ -352,13 +350,6 @@ def _build_enchantments(
     )
 
 
-def _compute_bag_slot(bag_id: str, bag_offset: int) -> int:
-    if bag_id == "0":
-        return 0
-    return BAG_BASE_OFFSET + ((bag_offset + int(bag_id) - 1) * BAG_SLOT_STRIDE)
-
-
-# ---------------------------------------------------------------------------
 def _add_to_itemlists(
     output: ParseOutput,
     exp: int,
@@ -371,32 +362,16 @@ def _add_to_itemlists(
     *,
     bag_id: str = "0",
     item_count: int = 1,
-    bag_item_mode: bool = True,
-    bag_offset: int = 0,
-    is_worn: bool = False,
 ) -> None:
     suffix = abs(int(suffix))
 
-    if bag_id != "0" and bag_item_mode and not is_worn:
-        inv_slot_id = slot_id
-        inv_bag_id = _compute_bag_slot(bag_id, bag_offset)
-    elif bag_id == "0" and not bag_item_mode and is_worn:
-        inv_slot_id = slot_id - 1
-        inv_bag_id = bag_id
-    elif bag_id == "0" and bag_item_mode and not is_worn:
-        inv_slot_id = (slot_id - 1) + EQUIPMENT_SLOT_COUNT
-        inv_bag_id = bag_id
-    else:
-        inv_slot_id = slot_id
-        inv_bag_id = bag_id
     output.inventory_list += wornTemplate.fill(
-        slot_id=inv_slot_id,
+        slot_id=slot_id,
         item_guid=output.item_guid,
         item_entry=item_entry,
-        bag_id=inv_bag_id,
+        bag_id=bag_id,
     )
 
-    # Build enchantment string
     config = _exp_config(exp)
     matched = [gems[0]["matched"], gems[1]["matched"], gems[2]["matched"]]
     gem_ids = [gems[0]["id"], gems[1]["id"], gems[2]["id"]]
@@ -405,7 +380,6 @@ def _add_to_itemlists(
         exp, enchant, str(suffix), matched, int(item_entry), buckle, config, gem_ids
     )
 
-    # Build instance row
     effective_suffix = -suffix if config.negate_suffix else suffix
 
     output.instance_list += config.instance_template.fill(
@@ -443,7 +417,6 @@ def _parse_equipment(
             fields["enchant"],
             fields["gems"],
             fields["buckle"],
-            is_worn=True,
         )
         slot_cache[slot_name] = item["id"]
 
@@ -490,15 +463,24 @@ def _parse_bag_contents(
     data: Dict,
     output: ParseOutput,
     exp: int,
-    slot_cache: Dict[str, int],
 ) -> None:
     bag_entries = data.get("bagContents", [])
     if not bag_entries:
         return
 
-    bag_offset = sum(1 for value in slot_cache.values() if value != 0)
-
+    # First pass: assign deterministic GUIDs to container entries
+    container_guid_map = {}
+    container_idx = 0
     for item in bag_entries:
+        if "count" not in item and "slot" not in item:
+            bag_num = int(item["bag"])
+            container_guid_map[bag_num] = ITEM_GUID_START + (
+                container_idx * ITEM_GUID_INCREMENT
+            )
+            container_idx += 1
+
+    # Second pass: actually add everything
+    for i, item in enumerate(bag_entries):
         if "count" not in item and "slot" not in item:
             slot_id = int(item["bag"]) + BAG_EQUIP_SLOT_OFFSET
             fields = {"suffix": "0", "enchant": "0"}
@@ -515,26 +497,29 @@ def _parse_bag_contents(
                 fields["enchant"],
                 fields["gems"],
                 fields["buckle"],
-                bag_id="0",
-                bag_item_mode=False,
-                bag_offset=0,
             )
             continue
 
+        bag_num = int(item["bag"])
+        if bag_num in container_guid_map:
+            inv_bag_id = str(container_guid_map[bag_num])
+            slot_id = int(item["slot"]) - 1
+        else:
+            inv_bag_id = "0"
+            slot_id = int(item["slot"]) - 1 + EQUIPMENT_SLOT_COUNT
         fields = _normalize_item_fields(item)
 
         _add_to_itemlists(
             output,
             exp,
-            int(item["slot"]) - 1,
+            slot_id,
             item["id"],
             fields["suffix"],
             fields["enchant"],
             fields["gems"],
             fields["buckle"],
-            bag_id=str(item["bag"]),
+            bag_id=inv_bag_id,
             item_count=item.get("count", 1),
-            bag_offset=bag_offset,
         )
 
 
@@ -942,9 +927,9 @@ def parse_file(data: Dict, exp: int) -> None:
 
     _add_default_skills(char_class_raw, char_info["char_level"], output)
 
+    _parse_bag_contents(data, output, exp)
     _parse_equipment(data, output, exp, slot_cache)
     _parse_pet(data, classes[char_class_raw], output, exp)
-    _parse_bag_contents(data, output, exp, slot_cache)
     _parse_spells(data, char_info["char_level"], output, exp)
     _parse_talents(data, output, exp)
     _parse_actions(data, output, exp)
