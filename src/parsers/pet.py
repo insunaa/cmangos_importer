@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # BSD 3-Clause License.
 #
 # Copyright (c) 2025, cmangos_importer contributors
@@ -29,31 +28,47 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import json
-import os.path
-import sys
+from __future__ import annotations
 
-from src.parser import parse_file
+from typing import Dict
 
-expansion = 2
-
-if sys.stdin and sys.stdin.isatty():
-    # check if ran from cli
-    if len(sys.argv) == 2:
-        filepath = sys.argv[1]
-    elif len(sys.argv) == 3:
-        filepath = sys.argv[1]
-        if sys.argv[2].isdecimal():
-            expansion = int(sys.argv[2])
-    elif len(sys.argv) == 1:
-        print("Usage: ./main.py path_to_the_file")
-        sys.exit(0)
-    else:
-        sys.exit(1)
-else:
-    filepath = "./exported.json"
+# ---------------------------------------------------------------------------
+from src.config import CHAR_GUID, DEFAULT_PET_MODEL, _exp_config
+from src.constants import classes, genericPetModelMap
 
 
-if os.path.isfile(filepath):
-    with open(filepath, encoding="utf8") as file:
-        parse_file(json.load(file), expansion)
+# ---------------------------------------------------------------------------
+def _parse_pet(
+    data: Dict,
+    char_class_id: int,
+    output,
+    exp: int,
+) -> None:
+    if char_class_id != classes["hunter"]:
+        return
+
+    pet_data = data.get("pet")
+    if not pet_data:
+        return
+
+    config = _exp_config(exp)
+
+    family_name = pet_data.get("family")
+    model_id = (
+        genericPetModelMap.get(family_name, DEFAULT_PET_MODEL)
+        if family_name
+        else DEFAULT_PET_MODEL
+    )
+
+    pet_list_str = config.pet_template.fill(
+        no_char_guid=True,
+        pet_entry=str(pet_data["id"]),
+        pet_owner=CHAR_GUID,
+        pet_name=pet_data["name"],
+        pet_level=str(pet_data["level"]),
+        pet_model=model_id,
+        pet_health=int(pet_data.get("health", 30000)),
+        pet_resource=int(pet_data.get("power", 100)),
+    )
+
+    output.pet_list = pet_list_str

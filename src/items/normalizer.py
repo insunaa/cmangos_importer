@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # BSD 3-Clause License.
 #
 # Copyright (c) 2025, cmangos_importer contributors
@@ -29,31 +28,33 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import json
-import os.path
-import sys
+from __future__ import annotations
 
-from src.parser import parse_file
-
-expansion = 2
-
-if sys.stdin and sys.stdin.isatty():
-    # check if ran from cli
-    if len(sys.argv) == 2:
-        filepath = sys.argv[1]
-    elif len(sys.argv) == 3:
-        filepath = sys.argv[1]
-        if sys.argv[2].isdecimal():
-            expansion = int(sys.argv[2])
-    elif len(sys.argv) == 1:
-        print("Usage: ./main.py path_to_the_file")
-        sys.exit(0)
-    else:
-        sys.exit(1)
-else:
-    filepath = "./exported.json"
+from typing import Dict, List, Optional
 
 
-if os.path.isfile(filepath):
-    with open(filepath, encoding="utf8") as file:
-        parse_file(json.load(file), expansion)
+# ---------------------------------------------------------------------------
+def _default_gems() -> List[Dict[str, object]]:
+    return [{"id": 0, "matched": False} for _ in range(3)]
+
+
+# ---------------------------------------------------------------------------
+def _pad_gems(raw_gems: Optional[List[Dict]]) -> List[Dict[str, object]]:
+    result = _default_gems()
+    for i, gem in enumerate(raw_gems or []):
+        if i < 3:
+            result[i] = {"id": int(gem["id"]), "matched": bool(gem["matched"])}
+    return result
+
+
+# ---------------------------------------------------------------------------
+def _normalize_item_fields(item: Dict) -> Dict[str, str]:
+    suffix_raw = item.get("suffix", 0)
+    enchant_raw = item.get("enchantId", 0)
+    buckle_raw = item.get("buckle")
+    return {
+        "suffix": str(suffix_raw) if suffix_raw else "0",
+        "enchant": str(enchant_raw) if enchant_raw else "0",
+        "gems": _pad_gems(item.get("gems")),
+        "buckle": str(buckle_raw).lower() if buckle_raw is not None else "false",
+    }

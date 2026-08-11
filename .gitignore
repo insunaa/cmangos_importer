@@ -4,3 +4,8 @@
 *.csv
 *.zip
 src/__pycache__
+src/parsers/__pycache__
+src/items/__pycache__
+src/data/__pycache__
+.pytest_cache
+old_sql

@@ -1,525 +1,487 @@
-qeVersionNum = "3.3"
-QEProfile = ""
+--------------------------------------------------------------------------------
+-- Constants
+--------------------------------------------------------------------------------
 
-local function GetItemSplit(itemLink)
+local VERSION             = "3.5"
+local NUM_EQUIP_SLOTS     = 19
+local NUM_ACTION_SLOTS    = 120
+local NUM_MACRO_SLOTS     = 138
+
+-- Mapping from WoW inventory slot index → human-readable key
+local SLOT_NAMES          = {
+    [1] = 'head',
+    [2] = 'neck',
+    [3] = 'shoulder',
+    [4] = 'shirt',
+    [5] = 'chest',
+    [6] = 'waist',
+    [7] = 'legs',
+    [8] = 'feet',
+    [9] = 'wrist',
+    [10] = 'hands',
+    [11] = 'finger1',
+    [12] = 'finger2',
+    [13] = 'trinket1',
+    [14] = 'trinket2',
+    [15] = 'back',
+    [16] = 'main_hand',
+    [17] = 'off_hand',
+    [18] = 'relic',
+    [19] = 'tabard',
+    [20] = 'ammo',
+    [21] = 'shield'
+}
+
+-- Equipment / off-hand item class IDs (weapon, armor)
+local IS_EQUIPPABLE_CLASS = { [2] = true, [4] = true }
+
+-- Max spell/quest IDs per expansion
+local MAX_SPELL_IDS       = { [0] = 33400, [1] = 53100, [2] = 80900 }
+local MAX_QUEST_IDS       = { [0] = 9665, [1] = 12515, [2] = 26034 }
+
+--------------------------------------------------------------------------------
+-- Helpers
+--------------------------------------------------------------------------------
+
+local function parseItemLink(itemLink)
     local itemString = string.match(itemLink, "item:([%-?%d:]+)")
-    local itemSplit = {}
-
-    -- Split data into a table
+    local result = {}
     for _, v in ipairs({ strsplit(":", itemString) }) do
-        if v == "" then
-            itemSplit[#itemSplit + 1] = 0
-        else
-            itemSplit[#itemSplit + 1] = tonumber(v)
-        end
+        result[#result + 1] = (v == "") and 0 or tonumber(v)
     end
-
-    return itemSplit
+    return result
 end
 
-function scanGear()
-    QEProfile = "" -- Reset text.
+local function nilIfZero(val)
+    return (val and val ~= 0) and val or nil
+end
 
-    slotNames = {
-        'head',      -- [1]
-        'neck',      -- [2]
-        'shoulder',  -- [3]
-        'shirt',     -- [6]
-        'chest',     -- [5]
-        'waist',     -- [10]
-        'legs',      -- [11]
-        'feet',      -- [12]
-        'wrist',     -- [8]
-        'hands',     -- [9]
-        'finger1',   -- [13]
-        'finger2',   -- [14]
-        'trinket1',  -- [15]
-        'trinket2',  -- [16]
-        'back',      -- [4]
-        'main_hand', -- [17]
-        'off_hand',  -- [18]
-        'relic',     -- [18]
-
-        'tabard',    -- [7]
-        'ammo',      -- [19]
-        'shield'     -- [20]
-    }
-
-
-    pname = GetUnitName("player")
-    _, pclass, _ = UnitClass("player")
-    pclass = string.lower(pclass)
-
-    addPrint("Gear Exporter v" .. qeVersionNum)
-    addPrint("Based on the Questionably Epic Importer")
-    addPrint(" ")
-    addPrint(pclass .. '="' .. pname .. '"')
-    addPrint("level=" .. UnitLevel("player"))
-    addPrint("race=" .. UnitRace("player"))
-    addPrint("gender=" .. UnitSex("player") - 2)
-    addPrint("region=")
-    addPrint("server=" .. GetRealmName())
-    addPrint("role=N/A")
-    addPrint("professions=N/A")
-    addPrint("talents=N/A")
-    addPrint("spec=N/A")
-    addPrint("expansion=" .. GetExpansionLevel())
-    addPrint("gold=" .. GetMoney())
-    addPrint("locale=" .. GetLocale())
-    addPrint(" ")
-
-    -- for loop for equipment
-
-    for i = 1, 19, 1 do
-        local equipID = GetInventoryItemID("player", i);
-        local itemLink = GetInventoryItemLink('player', i)
-
-        if (equipID ~= nil) then
-            local itemSplit = GetItemSplit(itemLink)
-            local suffix = itemSplit[7] * -1
-            if (suffix ~= -0) then
-                local unique = bit.band(itemSplit[8], 65535)
-                suffix = ",suffix=" .. suffix .. ",unique=" .. unique
-            else
-                suffix = ""
-            end
-            local hasBuckle = false
-            --local _, enchantId, gem1, gem2, gem3, gem4 = string.match(itemLink, "item:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+)")
-            local enchantId = itemSplit[2]
-            local gem1 = itemSplit[3]
-            local gem2 = itemSplit[4]
-            local gem3 = itemSplit[5]
-            SocketInventoryItem(i)
-            gemColors = { nil, nil, nil }
-            for j = 1, GetNumSockets() do
-                _, _, _, _, _, _, _, _, equipLoc = GetItemInfo(itemLink)
-                if (equipLoc ~= nil and equipLoc == "INVTYPE_WAIST") then
-                    if (GetSocketTypes(j) ~= nil and GetSocketTypes(j) == "Prismatic") then
-                        hasBuckle = true
-                    end
-                end
-                _, _, gemColors[j] = GetExistingSocketInfo(j)
-            end
-            CloseSocketInfo()
-            local itemName, _, _, _, _, _, _, _, _, _, _, classID, subclassID = GetItemInfo(equipID);
-            if (classID == 2 or classID == 4) then
-                addPrint(slotNames[i] ..
-                    "=,id=" ..
-                    equipID ..
-                    suffix ..
-                    ",enchantId=" ..
-                    enchantId ..
-                    ",gem1=" ..
-                    gem1 ..
-                    ":" ..
-                    tostring(gemColors[1]) ..
-                    ",gem2=" ..
-                    gem2 ..
-                    ":" ..
-                    tostring(gemColors[2]) ..
-                    ",gem3=" .. gem3 .. ":" .. tostring(gemColors[3]) .. ",buckle=" .. tostring(hasBuckle))
-            end
+-- Extract gem list from parsed item link + collected socket colors.
+-- Returns { {id, matched}, ... } or nil if no gems.
+local function collectGems(itemSplit, gemColors)
+    local gems = {}
+    for idx = 1, 3 do
+        local gemId = itemSplit[idx + 2] -- fields 3,4,5 are gem slots
+        if gemId and gemId ~= 0 then
+            table.insert(gems, { id = gemId, matched = gemColors[idx] })
         end
     end
+    return #gems > 0 and gems or nil
+end
 
-    local ammoID = GetInventoryItemID("player", 0);
-    if (ammoID ~= nil) then
-        addPrint("ammo=,id=" .. ammoID)
-    end
-    if (pclass == "hunter") then
-        local invID = C_Container.ContainerIDToInventoryID(4)
-        local bagLink = GetInventoryItemLink("player", invID)
-        local bagSplit = GetItemSplit(bagLink)
-        addPrint("quiver=,id=" .. bagSplit[1])
-        if (UnitExists("pet") ~= nil and UnitExists("pet") ~= false) then
-            petID = UnitGUID("pet")
-            i = 1
-            local tokens = {}
-            for token in string.gmatch(petID, "[^-]+") do
-                tokens[i] = token
-                i = i + 1
-            end
-            addPrint("")
-            addPrint("pet=" ..
-                UnitName("pet") ..
-                ",lv=" ..
-                UnitLevel("pet") ..
-                ",id=" ..
-                tokens[6] ..
-                ",family=" ..
-                UnitCreatureFamily("pet") .. ",health=" .. UnitHealthMax("pet") .. ",power=" .. UnitPowerMax("pet"))
-        end
-    end
+-- Scan sockets on an item and collect gem colors + buckle flag.
+-- caller must call C_ItemSocketInfo.CloseSocketInfo() after this returns.
+local function scanSockets(itemLink, isEquipped, bag, slot)
+    local hasBuckle = false
+    local gemColors = { nil, nil, nil }
 
-    addPrint("")
-    addPrint("### GEAR FROM BAGS ###")
-
-    if (true) then
-        --for i=20, 23, 1  do
-        for i = 1, 4, 1 do
-            local equipID = GetInventoryItemID("player", C_Container.ContainerIDToInventoryID(i));
-            if equipID ~= nil then
-                addPrint(i .. "," .. equipID)
-            end
-        end
-    end
-
-    for bag = 0, (NUM_BAG_SLOTS + GetNumBankSlots()) do
-        if (C_Container.GetContainerNumSlots(bag) ~= 0) then
-            for bagSlots = 1, C_Container.GetContainerNumSlots(bag) do
-                local itemID = C_Container.GetContainerItemID(bag, bagSlots);
-
-                if (itemID) then
-                    local itemName, _, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, vendorPrice, classID, subclassID =
-                        GetItemInfo(itemID);
-
-                    local itemLink = C_Container.GetContainerItemLink(bag, bagSlots)
-                    local itemSplit = GetItemSplit(itemLink)
-                    local suffix = itemSplit[7] * -1
-                    local hasBuckle = false
-                    local enchantId = itemSplit[2]
-                    local gem1 = itemSplit[3]
-                    local gem2 = itemSplit[4]
-                    local gem3 = itemSplit[5]
-
-                    if (suffix ~= -0) then
-                        local unique = bit.band(itemSplit[8], 65535)
-                        suffix = ",suffix=" .. suffix .. ",unique=" .. unique
-                    else
-                        suffix = ""
-                    end
-
-                    C_Container.SocketContainerItem(bag, bagSlots)
-                    gemColors = { nil, nil, nil }
-                    for j = 1, GetNumSockets() do
-                        _, _, _, _, _, _, _, _, equipLoc = GetItemInfo(itemLink)
-                        if (equipLoc ~= nil and equipLoc == "INVTYPE_WAIST") then
-                            if (GetSocketTypes(j) ~= nil and GetSocketTypes(j) == "Prismatic") then
-                                hasBuckle = true
-                            end
-                        end
-                        _, _, gemColors[j] = GetExistingSocketInfo(j)
-                    end
-                    CloseSocketInfo()
-
-                    local itemCount = C_Container.GetContainerItemInfo(bag, bagSlots)["stackCount"]
-                    addPrint("bag=" ..
-                        bag ..
-                        ",slot=" ..
-                        bagSlots ..
-                        ",id=" ..
-                        itemID ..
-                        suffix ..
-                        ",count=" ..
-                        itemCount ..
-                        ",enchantId=" ..
-                        enchantId ..
-                        ",gem1=" ..
-                        gem1 ..
-                        ":" ..
-                        tostring(gemColors[1]) ..
-                        ",gem2=" ..
-                        gem2 ..
-                        ":" ..
-                        tostring(gemColors[2]) ..
-                        ",gem3=" .. gem3 .. ":" .. tostring(gemColors[3]) .. ",buckle=" .. tostring(hasBuckle))
-                end
-            end
-        end
-    end
-
-    addPrint("")
-    addPrint("### TALENTS ###")
-
-    local numTabs = 3;
-    for t = 1, numTabs do
-        local numTalents = GetNumTalents(t);
-        for i = 1, numTalents do
-            nameTalent, icon, tier, column, currRank, maxRank = GetTalentInfo(t, i);
-            addPrint("t=" .. t .. ",id=" .. i .. ",rank=" .. currRank);
-        end
-    end
-
-    addPrint("")
-    addPrint("### ACTIONS ###")
-    for i = 1, 120 do
-        local type, id = GetActionInfo(i)
-        if (type ~= nil) then
-            addPrint("slot=" .. i .. ",type=" .. type .. ",id=" .. id)
-        end
-    end
-
-    addPrint("")
-    addPrint("### MACROS ###")
-    local numMacros = 138
-    for t = 1, numMacros do
-        local name, iconTexture, body, isLocal = GetMacroInfo(t);
-        if (name ~= nil) then
-            addPrint("slot=" .. t .. ",name=" .. string.gsub(name, ",", ".") .. ",texture=" .. iconTexture .. ",body=")
-            addPrint("---")
-            addPrint(string.gsub(body, ",", "."))
-            addPrint("---")
-        end
-    end
-
-    addPrint("")
-    addPrint("### SPELLS ###")
-
-    local maxSpells = 33400
-
-    if (expansion == 1) then
-        maxSpells = 53100
-    end
-    if (expansion == 2) then
-        maxSpells = 80900
-    end
-
-    for i = 1, maxSpells do
-        if (IsPlayerSpell(i)) then
-            addPrint(i)
-        end
-    end
-
-    addPrint("")
-    addPrint("### FACTIONS ###")
-
-    local numFactions = GetNumFactions()
-    local factionIndex = 1
-    while (factionIndex <= numFactions) do
-        local name, description, standingId, bottomValue, topValue, earnedValue, atWarWith, canToggleAtWar,
-        isHeader, isCollapsed, hasRep, isWatched, isChild, factionID, hasBonusRepGain, canBeLFGBonus = GetFactionInfo(
-            factionIndex)
-        if isHeader and isCollapsed then
-            ExpandFactionHeader(factionIndex)
-            numFactions = GetNumFactions()
-        end
-        if hasRep or not isHeader then
-            addPrint(factionID .. "," .. earnedValue)
-        end
-        factionIndex = factionIndex + 1
-    end
-
-    addPrint("")
-    addPrint("### QUESTS ###")
-
-    local maxQuests = 9665
-
-    if (expansion == 1) then
-        maxQuests = 12515
-    end
-    if (expansion == 2) then
-        maxQuests = 26034
-    end
-
-    for i = 1, maxQuests do
-        if (C_QuestLog.IsQuestFlaggedCompleted(i)) then
-            addPrint(i)
-        end
-    end
-
-    local expansion = GetExpansionLevel()
-
-    if (expansion == 2) then
-        addPrint("")
-        addPrint("### GLYPHS ###")
-
-        local glyphIndex = 1
-        while (glyphIndex <= GetNumGlyphSockets()) do
-            local talentGroup = GetActiveTalentGroup(false, false)
-            local _, _, glyphSpellID, _ = GetGlyphSocketInfo(glyphIndex, talentGroup)
-            if (glyphSpellID ~= nil) then
-                addPrint(glyphIndex .. "," .. glyphSpellID)
-            end
-            glyphIndex = glyphIndex + 1
-        end
-
-        addPrint("")
-        addPrint("### ACHIEVEMENTS ###")
-
-        local categories = GetCategoryList()
-
-        for k, j in ipairs(categories) do
-            if (j ~= nil) then
-                local achievementId = 1
-                local numAchievs, _, _ = GetCategoryNumAchievements(j)
-                while (achievementId <= numAchievs) do
-                    local id, _, _, completed, month, day, year, _, _, _, _, _, _, _, _ = GetAchievementInfo(j,
-                        achievementId)
-                    if (id ~= nil and completed ~= nil and year ~= nil and month ~= nil and day ~= nil) then
-                        addPrint(id .. "," .. year .. "," .. month .. "," .. day)
-                    end
-                    achievementId = achievementId + 1
-                end
-            end
-        end
+    if isEquipped then
+        SocketInventoryItem(slot)
     else
-        addPrint("")
-        addPrint("### GLYPHS ###")
-        addPrint("")
-        addPrint("### ACHIEVEMENTS ###")
+        C_Container.SocketContainerItem(bag, slot)
     end
 
-    addPrint("")
-    addPrint("### SKILLS ###")
+    for j = 1, C_ItemSocketInfo.GetNumSockets() do
+        local equipLoc = select(9, C_Item.GetItemInfo(itemLink))
+        if equipLoc == "INVTYPE_WAIST" then
+            local sockType = C_ItemSocketInfo.GetSocketTypes(j)
+            if sockType == "Prismatic" then
+                hasBuckle = true
+            end
+        end
+        _, _, gemColors[j] = C_ItemSocketInfo.GetExistingSocketInfo(j)
+    end
 
-    for i = 1, GetNumSkillLines() do
-        skillName, header, _, skillRank, _, _, skillMaxRank = GetSkillLineInfo(i)
-        if header == nil then
-            addPrint(skillName .. ";" .. skillRank .. ";" .. skillMaxRank)
+    return hasBuckle, gemColors
+end
+
+-- Build an equipment/bag entry table from a parsed item link + socket info.
+local function buildItemEntry(itemSplit)
+    local suffix = -(itemSplit[7] or 0)
+    if suffix == -0 then suffix = 0 end
+
+    return {
+        id        = itemSplit[1],
+        suffix    = nilIfZero(suffix),
+        unique    = nilIfZero(suffix) and bit.band(itemSplit[8], 65535) or nil,
+        enchantId = nilIfZero(itemSplit[2]),
+    }
+end
+
+--------------------------------------------------------------------------------
+-- Data collectors (each returns a table fragment to merge into the root data)
+--------------------------------------------------------------------------------
+
+local function collectPlayerInfo()
+    local _, rawClass = UnitClass("player")
+
+    return {
+        exporter_version = VERSION,
+        player = {
+            name        = GetUnitName("player"),
+            class       = string.lower(rawClass),
+            level       = UnitLevel("player"),
+            race        = UnitRace("player"),
+            gender      = UnitSex("player") - 2,
+            region      = nil,
+            server      = GetRealmName(),
+            role        = "N/A",
+            professions = "N/A",
+            talents     = "N/A",
+            spec        = "N/A",
+            expansion   = GetExpansionLevel(),
+            gold        = GetMoney(),
+            locale      = GetLocale(),
+        }
+    }
+end
+
+local function collectEquipment()
+    local equipment = {}
+
+    for i = 1, NUM_EQUIP_SLOTS do
+        local itemLink = GetInventoryItemLink("player", i)
+        if itemLink then
+            C_ItemSocketInfo.CloseSocketInfo()
+            local split = parseItemLink(itemLink)
+
+            -- Only store equippable items (class 2=armor, 4=weapon)
+            local classID = select(12, C_Item.GetItemInfo(itemLink))
+            if IS_EQUIPPABLE_CLASS[classID] then
+                local hasBuckle, gemColors = scanSockets(itemLink, true, nil, i)
+                C_ItemSocketInfo.CloseSocketInfo()
+
+                local entry = buildItemEntry(split)
+                entry.gems = collectGems(split, gemColors)
+                if hasBuckle then entry.buckle = true end
+
+                equipment[SLOT_NAMES[i]] = entry
+            end
         end
     end
 
-    addPrint("")
-    addPrint("### EOF ###")
+    C_ItemSocketInfo.CloseSocketInfo()
 
-    local f = GetMainFrame(QEProfile)
-    f:Show()
+    return { equipment = equipment }
+end
+
+local function collectAmmo()
+    local ammoId = GetInventoryItemID("player", 0)
+    return ammoId and { ammo = { id = ammoId } } or {}
+end
+
+local function collectHunterData()
+    if select(2, UnitClass("player")) ~= "HUNTER" then return {} end
+
+    local result = {}
+    local invId = C_Container.ContainerIDToInventoryID(4)
+    local link = GetInventoryItemLink("player", invId)
+    if link then
+        result.quiver = { id = parseItemLink(link)[1] }
+    end
+
+    if UnitExists("pet") then
+        local guid = UnitGUID("pet")
+        local tokens = {}
+        for token in string.gmatch(guid, "[^-]+") do
+            tokens[#tokens + 1] = token
+        end
+        result.pet = {
+            name   = UnitName("pet"),
+            level  = UnitLevel("pet"),
+            id     = tokens[6],
+            family = UnitCreatureFamily("pet"),
+            health = UnitHealthMax("pet"),
+            power  = UnitPowerMax("pet"),
+        }
+    end
+
+    return result
+end
+
+local function collectBagContents()
+    local contents = {}
+
+    -- Record equipped bag IDs
+    for i = 1, 4 do
+        local bagId = GetInventoryItemID("player", C_Container.ContainerIDToInventoryID(i))
+        if bagId then
+            table.insert(contents, { bag = i, id = bagId })
+        end
+    end
+
+    -- Scan every container (0=backpack, 1-4=bags, 5+=bank)
+    local maxBag = NUM_BAG_SLOTS + GetNumBankSlots()
+    for bag = 0, maxBag do
+        local numSlots = C_Container.GetContainerNumSlots(bag)
+        for slot = 1, numSlots do
+            local itemId = C_Container.GetContainerItemID(bag, slot)
+            if itemId then
+                local link = C_Container.GetContainerItemLink(bag, slot)
+                local split = parseItemLink(link)
+
+                local hasBuckle, gemColors = scanSockets(link, false, bag, slot)
+                C_ItemSocketInfo.CloseSocketInfo()
+
+                local entry = buildItemEntry(split)
+                entry.bag   = bag
+                entry.slot  = slot
+                entry.count = C_Container.GetContainerItemInfo(bag, slot)["stackCount"]
+                entry.gems  = collectGems(split, gemColors)
+                if hasBuckle then entry.buckle = true end
+
+                table.insert(contents, entry)
+            end
+        end
+    end
+
+    return { bagContents = contents }
+end
+
+local function collectActions()
+    local actions = {}
+    for i = 1, NUM_ACTION_SLOTS do
+        local atype, id = GetActionInfo(i)
+        if atype then
+            table.insert(actions, { slot = i, type = atype, id = id })
+        end
+    end
+    return { actions = actions }
+end
+
+local function collectMacros()
+    local macros = {}
+    for i = 1, NUM_MACRO_SLOTS do
+        local name, icon, body, isLocal = GetMacroInfo(i)
+        if name then
+            table.insert(macros, {
+                slot    = i,
+                name    = name,
+                texture = icon,
+                body    = body,
+                isLocal = isLocal,
+            })
+        end
+    end
+    return { macros = macros }
+end
+
+local function collectSpells()
+    local spells = {}
+    for i = 1, MAX_SPELL_IDS[GetExpansionLevel()] do
+        if IsPlayerSpell(i) then
+            table.insert(spells, i)
+        end
+    end
+    return { spells = spells }
+end
+
+local function collectFactions()
+    local factions = {}
+    local idx = 1
+    while idx <= GetNumFactions() do
+        local name, _, _, _, _, earned, _, _,
+        isHeader, isCollapsed, hasRep, _, _, factionId = GetFactionInfo(idx)
+
+        if isHeader and isCollapsed then
+            ExpandFactionHeader(idx)
+        end
+
+        if hasRep or not isHeader then
+            table.insert(factions, {
+                factionID   = factionId,
+                name        = name,
+                earnedValue = earned,
+            })
+        end
+
+        idx = idx + 1
+    end
+    return { factions = factions }
+end
+
+local function collectQuests()
+    local quests = {}
+    for i = 1, MAX_QUEST_IDS[GetExpansionLevel()] do
+        if C_QuestLog.IsQuestFlaggedCompleted(i) then
+            table.insert(quests, i)
+        end
+    end
+    return { quests = quests }
+end
+
+local function collectGlyphs()
+    local expansion = GetExpansionLevel()
+    if expansion ~= 2 then return {} end
+
+    local glyphs = {}
+    local group = GetActiveTalentGroup(false, false)
+    for i = 1, GetNumGlyphSockets() do
+        local spellId = select(3, GetGlyphSocketInfo(i, group))
+        if spellId then
+            table.insert(glyphs, { socket = i, spellID = spellId })
+        end
+    end
+    return { glyphs = glyphs }
+end
+
+local function collectAchievements()
+    local expansion = GetExpansionLevel()
+    if expansion ~= 2 then return {} end
+
+    local achievements = {}
+    for _, catId in ipairs(GetCategoryList()) do
+        if catId then
+            local numAchievs = select(1, GetCategoryNumAchievements(catId))
+            for i = 1, numAchievs do
+                local id, _, _, completed, month, day, year = GetAchievementInfo(catId, i)
+                if id and completed and year and month and day then
+                    table.insert(achievements, {
+                        id    = id,
+                        year  = year,
+                        month = month,
+                        day   = day,
+                    })
+                end
+            end
+        end
+    end
+    return { achievements = achievements }
+end
+
+local function collectSkills()
+    local skills = {}
+    for i = 1, GetNumSkillLines() do
+        local name, header, _, rank, _, _, maxRank = GetSkillLineInfo(i)
+        if not header then
+            table.insert(skills, { name = name, rank = rank, maxRank = maxRank })
+        end
+    end
+    return { skills = skills }
+end
+
+--------------------------------------------------------------------------------
+-- Merge a list of tables into one (shallow merge)
+--------------------------------------------------------------------------------
+
+local function mergeTables(...)
+    local result = {}
+    for _, tbl in ipairs({ ... }) do
+        for k, v in pairs(tbl) do
+            result[k] = v
+        end
+    end
+    return result
+end
+
+--------------------------------------------------------------------------------
+-- Public API
+--------------------------------------------------------------------------------
+
+function scanGear()
+    QEProfile = ""
+
+    local data = mergeTables(
+        collectPlayerInfo(),
+        collectEquipment(),
+        collectAmmo(),
+        collectHunterData(),
+        collectBagContents(),
+        collectActions(),
+        collectMacros(),
+        collectSpells(),
+        collectFactions(),
+        collectQuests(),
+        collectGlyphs(),
+        collectAchievements(),
+        collectSkills()
+    )
+
+    local rootKeys = {
+        "exporter_version", "player", "equipment", "ammo", "quiver", "pet",
+        "bagContents", "actions", "macros", "spells", "factions",
+        "quests", "glyphs", "achievements", "skills"
+    }
+    QEProfile = toJson(data, rootKeys)
+    GetMainFrame(QEProfile):Show()
 end
 
 function GetMainFrame(text)
-    -- Frame code largely adapted from https://www.wowinterface.com/forums/showpost.php?p=323901&postcount=2
-    if not SimcFrame then
-        -- Main Frame
-        frameConfig = {
-            point = "CENTER",
-            relativeFrame = nil,
-            relativePoint = "CENTER",
-            ofsx = 0,
-            ofsy = 0,
-            width = 750,
-            height = 400,
-        }
-        local f = CreateFrame("Frame", "SimcFrame", UIParent, "DialogBoxFrame")
-        f:ClearAllPoints()
-        -- load position from local DB
-        f:SetPoint(
-            frameConfig.point,
-            frameConfig.relativeFrame,
-            frameConfig.relativePoint,
-            frameConfig.ofsx,
-            frameConfig.ofsy
-        )
-        f:SetSize(frameConfig.width, frameConfig.height)
-        f:SetBackdrop({
-            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-            edgeFile = "Interface\\PVPFrame\\UI-Character-PVP-Highlight",
-            edgeSize = 16,
-            insets = { left = 8, right = 8, top = 8, bottom = 8 },
-        })
-        f:SetMovable(true)
-        f:SetClampedToScreen(true)
-        f:SetScript("OnMouseDown", function(self, button)
-            if button == "LeftButton" then
-                self:StartMoving()
-            end
-        end)
-        f:SetScript("OnMouseUp", function(self, button)
-            self:StopMovingOrSizing()
-            -- save position between sessions
-            point, relativeFrame, relativeTo, ofsx, ofsy = self:GetPoint()
-            frameConfig.point = point
-            frameConfig.relativeFrame = relativeFrame
-            frameConfig.relativePoint = relativeTo
-            frameConfig.ofsx = ofsx
-            frameConfig.ofsy = ofsy
-        end)
-
-        -- scroll frame
-        local sf = CreateFrame("ScrollFrame", "SimcScrollFrame", f, "UIPanelScrollFrameTemplate")
-        sf:SetPoint("LEFT", 16, 0)
-        sf:SetPoint("RIGHT", -32, 0)
-        sf:SetPoint("TOP", 0, -32)
-        sf:SetPoint("BOTTOM", SimcFrameButton, "TOP", 0, 0)
-
-        -- edit box
-        local eb = CreateFrame("EditBox", "SimcEditBox", SimcScrollFrame)
-        eb:SetSize(sf:GetSize())
-        eb:SetMultiLine(true)
-        eb:SetAutoFocus(true)
-        eb:SetFontObject("ChatFontNormal")
-        eb:SetScript("OnEscapePressed", function() f:Hide() end)
-        sf:SetScrollChild(eb)
-
-        -- resizing
-        f:SetResizable(true)
-        local rb = CreateFrame("Button", "SimcResizeButton", f)
-        rb:SetPoint("BOTTOMRIGHT", -6, 7)
-        rb:SetSize(16, 16)
-
-        rb:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-        rb:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
-        rb:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
-
-        rb:SetScript("OnMouseDown", function(self, button)
-            if button == "LeftButton" then
-                f:StartSizing("BOTTOMRIGHT")
-                self:GetHighlightTexture():Hide() -- more noticeable
-            end
-        end)
-        rb:SetScript("OnMouseUp", function(self, button)
-            f:StopMovingOrSizing()
-            self:GetHighlightTexture():Show()
-            eb:SetWidth(sf:GetWidth())
-
-            -- save size between sessions
-            frameConfig.width = f:GetWidth()
-            frameConfig.height = f:GetHeight()
-        end)
-
-        SimcFrame = f
+    if SimcFrame then
+        SimcEditBox:SetText(text)
+        SimcEditBox:HighlightText()
+        return SimcFrame
     end
+
+    local frameW, frameH = 750, 400
+
+    -- Base frame with built-in title bar and backdrop
+    local f = CreateFrame("Frame", "SimcFrame", UIParent, "DialogBoxFrame")
+    f:ClearAllPoints()
+    f:SetPoint("CENTER")
+    f:SetSize(frameW, frameH)
+    f:SetMovable(true)
+    f:SetClampedToScreen(true)
+
+    -- Make the title bar draggable.  The DialogBoxFrame template creates a title
+    -- texture at roughly y=-15..-37 from the frame top; we overlay an invisible
+    -- hitbox there so dragging works without stealing clicks from children.
+    local dragBar = CreateFrame("Button", nil, f)
+    dragBar:SetPoint("TOPLEFT", 14, -15)
+    dragBar:SetPoint("TOPRIGHT", -14, -15)
+    dragBar:SetHeight(22)
+    dragBar:RegisterForClicks("LeftButtonUp")
+    dragBar:SetScript("OnMouseDown", function(self, btn)
+        if btn == "LeftButton" then f:StartMoving() end
+    end)
+    dragBar:SetScript("OnMouseUp", function()
+        f:StopMovingOrSizing()
+    end)
+
+    -- Scrollable text area
+    local sf = CreateFrame("ScrollFrame", "SimcScrollFrame", f, "UIPanelScrollFrameTemplate")
+    sf:SetPoint("TOPLEFT", 16, -34)
+    sf:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -28, 45)
+
+    local eb = CreateFrame("EditBox", "SimcEditBox", sf)
+    eb:SetMultiLine(true)
+    eb:SetAutoFocus(true)
+    eb:SetFontObject("ChatFontNormal")
+    eb:SetMaxLetters(0)
+    eb:SetTextInsets(4, 4, 4, 4)
+    eb:SetScript("OnEscapePressed", function() f:Hide() end)
+    sf:SetScrollChild(eb)
+
+    -- Resize handle in the bottom-right corner
+    f:SetResizable(true)
+    local rb = CreateFrame("Button", nil, f)
+    rb:SetPoint("BOTTOMRIGHT", -6, 7)
+    rb:SetSize(16, 16)
+    rb:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    rb:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    rb:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    rb:RegisterForClicks("LeftButtonUp")
+    rb:SetScript("OnMouseDown", function(self, btn)
+        if btn == "LeftButton" then
+            f:StartSizing("BOTTOMRIGHT")
+            self:GetHighlightTexture():Hide()
+        end
+    end)
+    rb:SetScript("OnMouseUp", function(self)
+        f:StopMovingOrSizing()
+        self:GetHighlightTexture():Show()
+        eb:SetWidth(sf:GetWidth() - 16) -- account for scrollbar width
+    end)
+
+    -- On frame resize, keep the editbox width correct.
+    f:SetScript("OnSizeChanged", function()
+        eb:SetWidth(sf:GetWidth() - 16)
+    end)
+
+    SimcFrame = f
     SimcEditBox:SetText(text)
     SimcEditBox:HighlightText()
-    return SimcFrame
-end
-
-function addPrint(line)
-    --print(line)
-    if line ~= nil then
-        QEProfile = QEProfile .. line .. "\n";
-    end
-end
-
-function convertSlot(raw)
-    if (raw == "INVTYPE_HEAD") then
-        return "head"
-    elseif (raw == "INVTYPE_NECK") then
-        return "neck"
-    elseif (raw == "INVTYPE_SHOULDER") then
-        return "shoulder"
-    elseif (raw == "INVTYPE_CHEST") then
-        return "chest"
-    elseif (raw == "INVTYPE_WAIST") then
-        return "waist"
-    elseif (raw == "INVTYPE_LEGS") then
-        return "legs"
-    elseif (raw == "INVTYPE_FEET") then
-        return "feet"
-    elseif (raw == "INVTYPE_WRIST") then
-        return "wrist"
-    elseif (raw == "INVTYPE_HAND") then
-        return "hand"
-    elseif (raw == "INVTYPE_FINGER") then
-        return "finger1"
-    elseif (raw == "INVTYPE_CLOAK") then
-        return "back"
-    elseif (raw == "INVTYPE_WEAPON") then
-        return "one_hand"
-    elseif (raw == "INVTYPE_SHIELD") then
-        return "shield"
-    elseif (raw == "INVTYPE_2HWEAPON") then
-        return "main_hand"
-    elseif (raw == "INVTYPE_WEAPONMAINHAND") then
-        return "main_hand"
-    elseif (raw == "INVTYPE_WEAPONOFFHAND") then
-        return "off_hand"
-    elseif (raw == "INVTYPE_TRINKET") then
-        return "trinket1"
-    elseif (raw == "INVTYPE_RELIC") then
-        return "relic"
-    else
-        return "unknown"
-    end
+    return f
 end
 
 SLASH_GEAREXPORT1 = "/gearexport";

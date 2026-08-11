@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # BSD 3-Clause License.
 #
 # Copyright (c) 2025, cmangos_importer contributors
@@ -29,31 +28,25 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import json
-import os.path
-import sys
+"""Custom string.Template subclass for SQL generation."""
 
-from src.parser import parse_file
+from __future__ import annotations
 
-expansion = 2
+from string import Template as _Base
 
-if sys.stdin and sys.stdin.isatty():
-    # check if ran from cli
-    if len(sys.argv) == 2:
-        filepath = sys.argv[1]
-    elif len(sys.argv) == 3:
-        filepath = sys.argv[1]
-        if sys.argv[2].isdecimal():
-            expansion = int(sys.argv[2])
-    elif len(sys.argv) == 1:
-        print("Usage: ./main.py path_to_the_file")
-        sys.exit(0)
-    else:
-        sys.exit(1)
-else:
-    filepath = "./exported.json"
+# Shared character GUID injected into every template fill call
+char_guid = 500
 
 
-if os.path.isfile(filepath):
-    with open(filepath, encoding="utf8") as file:
-        parse_file(json.load(file), expansion)
+class Template(_Base):
+    """Template that auto-injects ``char_guid`` so callers don't need to pass it manually."""
+
+    def fill(self, **kwds: object) -> str:
+        if "no_char_guid" not in kwds:
+            kwds["char_guid"] = char_guid
+
+        for k, v in kwds.items():
+            if isinstance(v, str):
+                kwds[k] = v.rstrip("\n")
+
+        return super().safe_substitute(**kwds)

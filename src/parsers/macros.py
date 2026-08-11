@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # BSD 3-Clause License.
 #
 # Copyright (c) 2025, cmangos_importer contributors
@@ -29,31 +28,42 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import json
-import os.path
-import sys
+from __future__ import annotations
 
-from src.parser import parse_file
+import warnings
+from typing import Dict
 
-expansion = 2
-
-if sys.stdin and sys.stdin.isatty():
-    # check if ran from cli
-    if len(sys.argv) == 2:
-        filepath = sys.argv[1]
-    elif len(sys.argv) == 3:
-        filepath = sys.argv[1]
-        if sys.argv[2].isdecimal():
-            expansion = int(sys.argv[2])
-    elif len(sys.argv) == 1:
-        print("Usage: ./main.py path_to_the_file")
-        sys.exit(0)
-    else:
-        sys.exit(1)
-else:
-    filepath = "./exported.json"
+# ---------------------------------------------------------------------------
+from src.config import MACRO_GUID_BASE, MACRO_GUID_OFFSET, MACRO_MIN_SLOT
+from src.constants import singleMacroTemplate
 
 
-if os.path.isfile(filepath):
-    with open(filepath, encoding="utf8") as file:
-        parse_file(json.load(file), expansion)
+# ---------------------------------------------------------------------------
+def _parse_macros(data: Dict) -> str:
+    macro_bodies = ""
+    raw_macros = data.get("macros", [])
+    for macro in raw_macros:
+        slot_num = int(macro["slot"])
+        if slot_num < MACRO_MIN_SLOT:
+            warnings.warn(
+                f"Macro '{macro.get('name', '?')}' in slot {slot_num} "
+                f"is below minimum ({MACRO_MIN_SLOT}), skipping."
+            )
+            continue
+
+        body_lines = macro["body"].replace("@", "target=")
+        actual_body = singleMacroTemplate.fill(
+            macro_guid=MACRO_GUID_BASE + slot_num - MACRO_GUID_OFFSET,
+            macro_body=body_lines,
+            macro_name=macro["name"],
+        )
+        macro_bodies += actual_body
+
+    _write_macros(macro_bodies)
+    return macro_bodies
+
+
+# ---------------------------------------------------------------------------
+def _write_macros(macro_file: str) -> None:
+    with open("macros-cache.txt", "w") as writer:
+        writer.write(macro_file)
